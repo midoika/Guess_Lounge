@@ -64,3 +64,69 @@ $duel hoge < midoika nm https://www.geoguessr.com/results/OTBuTnHfJoR1qSOD
 ```
 $nogame midoika hoge move
 ```
+
+# :flag_gb: 
+# 1. Registration and Withdrawal
+## Registration ( @マルチ募集, @Guess Lounge Player , moderator)
+### You can register it by   #⑥-✅参加登録  But your name will be removed `_` or `.` 
+- And you get @Guess Lounge Player role
+- Name is half-width alphanumeric characters only.
+
+## Withdrawal (admin only)
+- Your match records are also erased...
+- You loss @Guess Lounge Player role
+```
+$delete hoge
+```
+## Name Change (Self-request, moderator)
+- The former name followed by the new name.
+```
+$rename hoge hage
+```
+
+# 2. Display
+## Name Check
+```
+$tell
+$tell "User ID"
+$tell @midoika
+```
+## Score Check
+```
+$mmr
+$mmr hoge
+```
+## Status Check
+- `-en`is English version
+- `-l`is longer version
+```
+$stats -enl
+$stats hoge
+```
+## Rankings (@Guess Lounge Player , moderator)
+- You can see in https://discord.com/channels/956620253603967006/1241363597116833792
+# 3. Match Registration (@Guess Lounge Player, moderator)
+## 1 on 1 Duels
+- Use ">" or "<" to denote the winner, with the larger side representing victory.
+- The greater side of the inequality represents the winner.
+  - nm > No Move
+  - move > Moving
+  - nmpz > NMPZ
+- Paste a URL link as proof.(~3 urls)
+- If you found typo, use `$nogame`. (deleting message doesn't work)
+- Both of GeoGuessr profile URL are required in advance in DM
+```
+$profileurl https://www.geoguessr.com/user/~
+$duel midoika > hoge move
+```
+```
+$duel hoge < midoika nm https://www.geoguessr.com/results/aaa
+```
+
+## Make the last game a no-game. （@Guess Lounge Player, moderator）
+- Use this command to invalidate a result when registered incorrectly.
+- **After declaring a match invalid, neither side may proceed to the next match until it's resolved.**
+  - *However, matches under different rules can proceed (e.g., if you want to make a Moving match no-game, you can still play No Move match).*
+```
+$nogame midoika hoge move
+```
