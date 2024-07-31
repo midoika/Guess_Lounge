@@ -1,4 +1,6 @@
 # Guess_Lounge
+- シーズン0のリザルト[https://midoika.github.io/Guess_Lounge/archive/season_0/docs/html/index.html](https://midoika.github.io/Guess_Lounge/archive/season_0/docs/html/index.html)
+- プロフィールURLの登録方法 [https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url/how_to_register_your_profile_url](https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url/how_to_register_your_profile_url)
 # :flag_jp: 
 
 # 1. 登録・退会など
