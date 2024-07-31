@@ -1,4 +1,4 @@
-プロフィールURLの登録が完了していないと試合の登録ができません。
+# プロフィールURLの登録が完了していないと試合の登録ができません。
 https://www.geoguessr.com/me/profile にアクセスして、一番下にあるURLをコピーし、yohe（Bot）に
 ```
 $profileurl https://www.geoguessr.com/user/~
