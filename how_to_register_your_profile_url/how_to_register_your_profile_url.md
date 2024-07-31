@@ -5,4 +5,4 @@ $profileurl https://www.geoguessr.com/user/~
 ```
 というコマンドで DM で送ってください。
 Send your profile URL by DM before Registering the result.
-![how_to_register_your_profile_url](https://github.com/midoika/Guess_Launge/blob/main/how_to_register_your_profile_url/how_to_copy_geoguessr_profile_url.png "サンプル")
+![how_to_register_your_profile_url](https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url/how_to_copy_geoguessr_profile_url.png "サンプル")
