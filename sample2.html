@@ -24,10 +24,10 @@
     };
 
     // Firebase初期化
-    const app = firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // コレクションとドキュメントを固定で指定
+    // 固定のコレクションとドキュメントIDを使用
     const collectionName = "live_challenge";
     const documentId = "09553352-f2c1-4ef1-9e1b-cfef9238cbbd";
 
