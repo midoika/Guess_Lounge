@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Maps ピン配置</title>
+    <style>
+        /* マップのサイズを指定 */
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h3>Google Mapにピンを置く</h3>
+    <div id="map"></div>
+
+    <script>
+        // JSON形式の座標データ
+        const coordinates = [
+            { lat: 35.6895, lng: 139.6917 },  // 東京
+            { lat: 34.6937, lng: 135.5023 }   // 大阪
+        ];
+
+        function initMap() {
+            // マップの初期化
+            const map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 5,
+                center: coordinates[0]  // 最初の座標を中心に
+            });
+
+            // 座標にピンを置く
+            coordinates.forEach(coord => {
+                new google.maps.Marker({
+                    position: coord,
+                    map: map
+                });
+            });
+        }
+    </script>
+
+    <!-- Google Maps JavaScript API をロード -->
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw&callback=initMap">
+    </script>
+</body>
+</html>
+
