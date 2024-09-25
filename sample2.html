@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firestore Document Reference</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.1.0/firebase-firestore.js"></script>
+</head>
+<body>
+  <h1>Firestore Document Data</h1>
+  <div id="documentData"></div>
+
+  <script>
+    // Firebase設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4",
+      authDomain: "mido-96308.firebaseapp.com",
+      projectId: "mido-96308",
+      storageBucket: "mido-96308.appspot.com",
+      messagingSenderId: "574980077608",
+      appId: "1:574980077608:web:5065ea7bd43efaea31dd1d"
+    };
+
+    // Firebase初期化
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // コレクションとドキュメントを固定で指定
+    const collectionName = "live_challenge";
+    const documentId = "09553352-f2c1-4ef1-9e1b-cfef9238cbbd";
+
+    // Firestoreで指定されたコレクションとドキュメントを参照
+    db.collection(collectionName).doc(documentId).get().then((doc) => {
+      if (doc.exists) {
+        // ドキュメントデータを表示
+        document.getElementById('documentData').innerHTML = `<pre>${JSON.stringify(doc.data(), null, 2)}</pre>`;
+      } else {
+        document.getElementById('documentData').textContent = 'No such document!';
+      }
+    }).catch((error) => {
+      console.error("Error getting document: ", error);
+      document.getElementById('documentData').textContent = 'Error getting document.';
+    });
+  </script>
+</body>
+</html>
