@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Maps ピンとストリートビューリンク</title>
+    <style>
+        /* マップのサイズを指定 */
+        #map {
+            height: 500px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <h3>Google Mapにピンを置く</h3>
+    <div id="map"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-firestore.js"></script>
+    <script>
+        // Firebase 初期化
+        firebase.initializeApp({
+            apiKey: 'AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4',
+            projectId: 'mido-96308',
+        });
+
+        const db = firebase.firestore();
+
+        // URLのクエリパラメータからコレクション名とドキュメントIDを取得
+        const params = new URLSearchParams(window.location.search);
+        const collectionName = params.get('collection');
+        const documentId = params.get('document');
+
+        // マップとピンの初期化
+        function initMap(coordinates) {
+            const map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 5,
+                center: coordinates.length > 0 ? coordinates[0] : {lat: 35.6895, lng: 139.6917}  // 最初の座標を中心に
+            });
+
+            // 座標にピンを置き、クリックイベントを追加
+            coordinates.forEach(coord => {
+                const marker = new google.maps.Marker({
+                    position: { lat: coord.lat, lng: coord.lng },
+                    map: map,
+                    title: `Lat: ${coord.lat}, Lng: ${coord.lng}`
+                });
+
+                // ピンがクリックされた時にストリートビューのリンクに飛ぶ
+                marker.addListener('click', () => {
+                    window.open(coord.streetViewLink, '_blank');  // 新しいタブでリンクを開く
+                });
+            });
+        }
+
+        if (collectionName && documentId) {
+            // ドキュメントが指定されている場合、そのドキュメントを取得
+            db.collection(collectionName).doc(documentId)
+                .get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        const coordinates = [];
+
+                        // roundsが存在するか確認
+                        if (data.rounds && Array.isArray(data.rounds)) {
+                            data.rounds.forEach(round => {
+                                const coordinate = round.answer?.coordinateAnswerPayload?.coordinate;
+                                if (coordinate) {
+                                    coordinates.push({
+                                        lat: coordinate.lat,
+                                        lng: coordinate.lng,
+                                        streetViewLink: `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${coordinate.lat},${coordinate.lng}`
+                                    });
+                                }
+                            });
+                        }
+
+                        // マップにピンを表示
+                        initMap(coordinates);
+                    } else {
+                        alert('指定されたドキュメントは存在しません。');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching document: ', error);
+                    alert('ドキュメントの取得中にエラーが発生しました。');
+                });
+        } else {
+            alert('コレクション名またはドキュメントIDが指定されていません。');
+        }
+    </script>
+
+    <!-- Google Maps JavaScript API をロード -->
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw&callback=initMap">
+    </script>
+</body>
+</html>
+
