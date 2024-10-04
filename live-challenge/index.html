@@ -127,8 +127,9 @@
                         initMap(coordinates);
 
                         // leaderboardsが存在するか確認
-                        if (data.leaderboards && data.leaderboards.game && Array.isArray(data.leaderboards.game.entries)) {
-                            const entries = data.leaderboards.game.entries;
+                        // if (data.leaderboards && data.leaderboards.game && Array.isArray(data.leaderboards.game.entries)) {
+                        if (Array.isArray(data.topPlayers)) {
+                            const entries = data.topPlayers;
                             displayLeaderboard(entries);
                         } else {
                             document.getElementById('leaderboardEntries').textContent = 'リーダーボードはありません。';
