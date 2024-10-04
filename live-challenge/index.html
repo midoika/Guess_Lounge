@@ -3,18 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live challenge archives</title>
+    <title>Live challenge archiver</title>
     <style>
         /* マップのサイズを指定 */
         #map {
             height: 500px;
             width: 100%;
         }
+        /* リーダーボードのスタイル */
+        #leaderboard {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+        }
+        .player {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
-    <h3>Google Mapにピンを置く</h3>
+    <h3>Google Map</h3>
     <div id="map"></div>
+
+    <!-- リーダーボード表示エリア -->
+    <div id="leaderboard">
+        <h4>リーダーボード</h4>
+        <div id="leaderboardEntries"></div>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-firestore.js"></script>
@@ -55,6 +78,28 @@
             });
         }
 
+        // リーダーボードの表示
+        function displayLeaderboard(entries) {
+            const leaderboardContainer = document.getElementById('leaderboardEntries');
+            leaderboardContainer.innerHTML = '';  // 既存の内容をクリア
+
+            entries.forEach(entry => {
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'player';
+
+                const avatar = document.createElement('img');
+                avatar.src = entry.avatarPath;
+                avatar.className = 'avatar';
+
+                const nameAndScore = document.createElement('div');
+                nameAndScore.textContent = `${entry.name}: ${entry.score} pts`;
+
+                playerDiv.appendChild(avatar);
+                playerDiv.appendChild(nameAndScore);
+                leaderboardContainer.appendChild(playerDiv);
+            });
+        }
+
         if (collectionName && documentId) {
             // ドキュメントが指定されている場合、そのドキュメントを取得
             db.collection(collectionName).doc(documentId)
@@ -80,6 +125,14 @@
 
                         // マップにピンを表示
                         initMap(coordinates);
+
+                        // leaderboardsが存在するか確認
+                        if (data.leaderboards && data.leaderboards.game && Array.isArray(data.leaderboards.game.entries)) {
+                            const entries = data.leaderboards.game.entries;
+                            displayLeaderboard(entries);
+                        } else {
+                            document.getElementById('leaderboardEntries').textContent = 'リーダーボードはありません。';
+                        }
                     } else {
                         alert('指定されたドキュメントは存在しません。');
                     }
@@ -95,8 +148,7 @@
 
     <!-- Google Maps JavaScript API をロード -->
     <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw&callback=initMap">
+        src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap">
     </script>
 </body>
 </html>
-
