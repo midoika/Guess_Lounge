@@ -92,7 +92,14 @@
                 avatar.className = 'avatar';
 
                 const nameAndScore = document.createElement('div');
-                nameAndScore.textContent = `<a href= "xxx.html" alt="画像にリンク">${entry.name}</a>: ${entry.totalScore} pts`;
+           // 名前をリンクにして、entry.idをURLに設定
+                const nameLink = document.createElement('a');
+                nameLink.href = 'https://www.geoguessr.com/user/${entry.id}';  // entry.idをURLとして使用
+                nameLink.textContent = entry.name;
+                nameLink.className = 'name-link'; // 必要に応じてクラスを追加
+        
+                nameAndScore.appendChild(nameLink);
+                nameAndScore.append(`: ${entry.totalScore} pts`);  // スコアはリンクの後に追加
 
                 playerDiv.appendChild(avatar);
                 playerDiv.appendChild(nameAndScore);
