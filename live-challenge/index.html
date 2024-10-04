@@ -94,7 +94,7 @@
                 const nameAndScore = document.createElement('div');
            // 名前をリンクにして、entry.idをURLに設定
                 const nameLink = document.createElement('a');
-                nameLink.href = 'https://www.geoguessr.com/user/${entry.id}';  // entry.idをURLとして使用
+                nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;  // entry.idをURLとして使用
                 nameLink.textContent = entry.name;
                 nameLink.className = 'name-link'; // 必要に応じてクラスを追加
         
