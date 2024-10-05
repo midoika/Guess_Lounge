@@ -86,30 +86,39 @@
                 markers.push(marker);  // ピンを配列に追加
             });
         }
+        // ピンを追跡するためのオブジェクト
+        const activeMarkers = {};
         
-        // ピンの追加
-        function addMarkerWithAvatar(lat, lng, avatarUrl) {
-            // 既存のピンをクリア
-            // markers.forEach(marker => marker.setMap(null));
-            // markers = [];
+        // ピンの追加/削除
+        function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
+            if (activeMarkers[roundNumber]) {
+                // ピンが既に存在する場合、それを消す
+                activeMarkers[roundNumber].setMap(null);
+                delete activeMarkers[roundNumber];  // マーカーを削除
+            } else {
+                // 新しいピンを追加
+                const marker = new google.maps.Marker({
+                    position: { lat: lat, lng: lng },
+                    map: map,
+                    icon: {
+                        url: avatarUrl,  // アバター画像をピンに設定
+                        scaledSize: new google.maps.Size(40, 40)  // サイズ調整
+                    },
+                    title: `Lat: ${lat}, Lng: ${lng}`
+                });
         
-            // 新しいピンを追加
-            const marker = new google.maps.Marker({
-                position: { lat: lat, lng: lng },
-                map: map,
-                icon: {
-                    url: avatarUrl,  // アバター画像をピンに設定
-                    scaledSize: new google.maps.Size(40, 40)  // サイズ調整
-                },
-                title: `Lat: ${lat}, Lng: ${lng}`
-            });
+                // ピンがクリックされた時にストリートビューのリンクに飛ぶ
+                marker.addListener('click', () => {
+                    window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
+                });
         
-            // ピンがクリックされた時にストリートビューのリンクに飛ぶ
-            marker.addListener('click', () => {
-                window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
-            });
+                // ピンを追跡
+                activeMarkers[roundNumber] = marker;
         
-            markers.push(marker);  // 新しいピンをリストに追加
+                // マップをその座標に移動し、ズームレベルを調整
+                map.setCenter({ lat: lat, lng: lng });
+                map.setZoom(10);
+            }
         }
         
         // リーダーボードの表示
@@ -133,7 +142,7 @@
                 nameLink.className = 'name-link'; // 必要に応じてクラスを追加
             
                 nameAndScore.appendChild(nameLink);
-                nameAndScore.append(`: ${entry.totalScore} pts=`);
+                nameAndScore.append(`: ${entry.totalScore} pts`);
         
                 // ラウンドごとのスコアを追加
                 const roundScores = document.createElement('div');
@@ -145,11 +154,9 @@
                     roundScore.textContent = `R${guess.roundNumber}: ${guess.score} pts `;
                     roundScore.className = 'round-score'; // 必要ならスタイル用のクラスを追加
         
-                    // クリックイベントを追加して、ピンを追加
+                    // クリックイベントを追加して、ピンを追加/削除
                     roundScore.addEventListener('click', () => {
-                        addMarkerWithAvatar(guess.lat, guess.lng, avatar.src);  // クリック時にピンをマップに追加
-                        map.setCenter({ lat: guess.lat, lng: guess.lng });  // マップをその座標に移動
-                        map.setZoom(10);  // ズームレベルを調整
+                        toggleMarkerWithAvatar(guess.lat, guess.lng, avatar.src, guess.roundNumber);  // クリック時にピンをトグル
                     });
         
                     roundScores.appendChild(roundScore);
@@ -161,6 +168,7 @@
                 leaderboardContainer.appendChild(playerDiv);
             });
         }
+
 
         if (collectionName && documentId) {
             // ドキュメントが指定されている場合、そのドキュメントを取得
