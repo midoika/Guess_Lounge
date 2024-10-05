@@ -69,12 +69,16 @@
             // ピンを最初に全て消す
             markers.forEach(marker => marker.setMap(null));
             markers = [];  // ピンをリセット
-        
+            
+            // マップの範囲を動的に調整するための LatLngBounds オブジェクトを作成
+            const bounds = new google.maps.LatLngBounds();
+            
             // 座標にピンを置く
             coordinates.forEach(coord => {
                 const marker = new google.maps.Marker({
                     position: { lat: coord.lat, lng: coord.lng },
                     map: map,
+                    label: `${index + 1}`,  // インデックス + 1 で番号をラベルとして表示
                     title: `Lat: ${coord.lat}, Lng: ${coord.lng}`
                 });
         
