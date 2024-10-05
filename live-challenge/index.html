@@ -83,6 +83,35 @@
             const leaderboardContainer = document.getElementById('leaderboardEntries');
             leaderboardContainer.innerHTML = '';  // 既存の内容をクリア
 
+        // 最初に見出しを追加
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'header';
+        
+        const avatarHeader = document.createElement('span');
+        avatarHeader.textContent = 'Avatar';
+        avatarHeader.className = 'header-avatar';
+    
+        const nameHeader = document.createElement('span');
+        nameHeader.textContent = 'Name';
+        nameHeader.className = 'header-name';
+    
+        const totalPointsHeader = document.createElement('span');
+        totalPointsHeader.textContent = 'Total Points';
+        totalPointsHeader.className = 'header-total-points';
+    
+        const roundScoresHeader = document.createElement('span');
+        roundScoresHeader.textContent = 'Round Scores';
+        roundScoresHeader.className = 'header-round-scores';
+    
+        // 見出しをheaderDivに追加
+        headerDiv.appendChild(avatarHeader);
+        headerDiv.appendChild(nameHeader);
+        headerDiv.appendChild(totalPointsHeader);
+        headerDiv.appendChild(roundScoresHeader);
+        
+        // 見出しをコンテナに追加
+        leaderboardContainer.appendChild(headerDiv);
+
             entries.forEach(entry => {
                 const playerDiv = document.createElement('div');
                 playerDiv.className = 'player';
