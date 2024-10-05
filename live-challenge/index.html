@@ -101,8 +101,20 @@
                 nameAndScore.appendChild(nameLink);
                 nameAndScore.append(`: ${entry.totalScore} pts`);  // スコアはリンクの後に追加
 
+                // ラウンドごとのスコアを追加
+                const roundScores = document.createElement('div');
+                roundScores.className = 'round-scores'; // 必要に応じてクラスを追加
+        
+                // ラウンドごとのスコアを表示
+                entry.guesses.forEach(guess => {
+                    const roundScore = document.createElement('span');
+                    roundScore.textContent = `Round ${guess.roundNumber}: ${guess.score} pts `;
+                    roundScores.appendChild(roundScore);
+                });
+        
                 playerDiv.appendChild(avatar);
                 playerDiv.appendChild(nameAndScore);
+                playerDiv.appendChild(roundScores);  // ラウンドごとのスコアを追加
                 leaderboardContainer.appendChild(playerDiv);
             });
         }
