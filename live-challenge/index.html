@@ -56,62 +56,105 @@
         const documentId = params.get('document');
 
         // マップとピンの初期化
+        let map;  // マップ変数をスコープ外で宣言して、他の関数からもアクセス可能に
+        let markers = [];  // 既存のピンを管理するための配列
+        
         function initMap(coordinates) {
-            const map = new google.maps.Map(document.getElementById('map'), {
+            map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 5,
                 center: coordinates.length > 0 ? coordinates[0] : {lat: 35.6895, lng: 139.6917},  // 最初の座標を中心に
                 streetViewControl: false  // ペグマン（ストリートビュー）を無効化
             });
-
-            // 座標にピンを置き、クリックイベントを追加
+        
+            // ピンを最初に全て消す
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];  // ピンをリセット
+        
+            // 座標にピンを置く
             coordinates.forEach(coord => {
                 const marker = new google.maps.Marker({
                     position: { lat: coord.lat, lng: coord.lng },
                     map: map,
                     title: `Lat: ${coord.lat}, Lng: ${coord.lng}`
                 });
-
+        
                 // ピンがクリックされた時にストリートビューのリンクに飛ぶ
                 marker.addListener('click', () => {
                     window.open(coord.streetViewLink, '_blank');  // 新しいタブでリンクを開く
                 });
+        
+                markers.push(marker);  // ピンを配列に追加
             });
         }
-
+        
+        // ピンの追加
+        function addMarkerWithAvatar(lat, lng, avatarUrl) {
+            // 既存のピンをクリア
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+        
+            // 新しいピンを追加
+            const marker = new google.maps.Marker({
+                position: { lat: lat, lng: lng },
+                map: map,
+                icon: {
+                    url: avatarUrl,  // アバター画像をピンに設定
+                    scaledSize: new google.maps.Size(40, 40)  // サイズ調整
+                },
+                title: `Lat: ${lat}, Lng: ${lng}`
+            });
+        
+            // ピンがクリックされた時にストリートビューのリンクに飛ぶ
+            marker.addListener('click', () => {
+                window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
+            });
+        
+            markers.push(marker);  // 新しいピンをリストに追加
+        }
+        
         // リーダーボードの表示
         function displayLeaderboard(entries) {
             const leaderboardContainer = document.getElementById('leaderboardEntries');
             leaderboardContainer.innerHTML = '';  // 既存の内容をクリア
-
+        
             entries.forEach(entry => {
                 const playerDiv = document.createElement('div');
                 playerDiv.className = 'player';
-
+        
                 const avatar = document.createElement('img');
                 avatar.src = "https://www.geoguessr.com/images/plain/" + entry.avatarPath;
                 avatar.className = 'avatar';
-
+        
                 const nameAndScore = document.createElement('div');
-           // 名前をリンクにして、entry.idをURLに設定
+                // 名前をリンクにして、entry.idをURLに設定
                 const nameLink = document.createElement('a');
                 nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;  // entry.idをURLとして使用
                 nameLink.textContent = entry.name;
                 nameLink.className = 'name-link'; // 必要に応じてクラスを追加
-        
+            
                 nameAndScore.appendChild(nameLink);
-                nameAndScore.append(`: ${entry.totalScore} pts=`);  // スコアはリンクの後に追加
-
+                nameAndScore.append(`: ${entry.totalScore} pts=`);
+        
                 // ラウンドごとのスコアを追加
                 const roundScores = document.createElement('div');
                 roundScores.className = 'round-scores'; // 必要に応じてクラスを追加
-        
+            
                 // ラウンドごとのスコアを表示
                 entry.guesses.forEach(guess => {
                     const roundScore = document.createElement('span');
                     roundScore.textContent = `R${guess.roundNumber}: ${guess.score} pts `;
+                    roundScore.className = 'round-score'; // 必要ならスタイル用のクラスを追加
+        
+                    // クリックイベントを追加して、ピンを追加
+                    roundScore.addEventListener('click', () => {
+                        addMarkerWithAvatar(guess.lat, guess.lng, avatar.src);  // クリック時にピンをマップに追加
+                        map.setCenter({ lat: guess.lat, lng: guess.lng });  // マップをその座標に移動
+                        map.setZoom(10);  // ズームレベルを調整
+                    });
+        
                     roundScores.appendChild(roundScore);
                 });
-        
+            
                 playerDiv.appendChild(avatar);
                 playerDiv.appendChild(nameAndScore);
                 playerDiv.appendChild(roundScores);  // ラウンドごとのスコアを追加
