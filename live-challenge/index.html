@@ -165,9 +165,9 @@
                 summaryContent.innerHTML = `
                     <p>Start time: ${startTime}</p>
                     <p>Round time: ${roundTime} s</p>
-                    <p>Move: ${movementOptions.forbidMoving ? 'Yes' : 'No'}, 
-                    Zoom: ${movementOptions.forbidZooming ? 'Yes' : 'No'}, 
-                    Pan: ${movementOptions.forbidRotating ? 'Yes' : 'No'}</p>
+                    <p>${movementOptions.forbidMoving ? 'No Move ' : 'Move '}, 
+                    ${movementOptions.forbidRotating ? 'No Pan ' : 'Pan '},
+                    ${movementOptions.forbidZooming ? 'No zoom ' : 'Zoom '}</p>
                     <p>Map: <a href="https://www.geoguessr.com/maps/${mapSlug}" target="_blank">${mapName}</a></p>
                 `;
             } else {
