@@ -209,8 +209,7 @@
                         // マップにピンを表示
                         initMap(coordinates);
 
-                        // leaderboardsが存在するか確認
-                        // if (data.leaderboards && data.leaderboards.game && Array.isArray(data.leaderboards.game.entries)) {
+                        // topPlayersが存在するか確認
                         if (Array.isArray(data.topPlayers)) {
                             const entries = data.topPlayers;
                             displayLeaderboard(entries);
