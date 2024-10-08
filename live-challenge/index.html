@@ -48,7 +48,7 @@
     </div>
     <!-- リーダーボード表示エリア -->
     <div id="leaderboard">
-        <h4>リーダーボード</h4>
+        <h4>リーダーボード (点数クリックでゲス地点へズーム)</h4>
         <div id="leaderboardEntries"></div>
     </div>
 
@@ -77,6 +77,7 @@
                 zoom: 5,
                 center: coordinates.length > 0 ? coordinates[0] : { lat: 35.6895, lng: 139.6917 },  // デフォルトの中心
                 streetViewControl: false  // ペグマン（ストリートビュー）を無効化
+                gestureHandling: 'greedy'  // Ctrlなしでもズームできるようにする
             });
         
             // ピンを最初に全て消す
