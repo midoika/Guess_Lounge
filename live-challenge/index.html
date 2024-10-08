@@ -10,6 +10,7 @@
             height: 500px;
             width: 100%;
         }
+        
         /* リーダーボードのスタイル */
         #leaderboard {
             margin-top: 20px;
@@ -27,12 +28,24 @@
             height: 40px;
             margin-right: 10px;
         }
+        /* 概要のスタイル */
+        #summary {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
 <body>
     <h3>保存版 Live challenge result</h3>
     <div id="map"></div>
-
+    
+    <!-- 概要表示エリア -->
+    <div id="summary">
+        <h4>概要</h4>
+        <div id="summaryContent"></div>
+    </div>
     <!-- リーダーボード表示エリア -->
     <div id="leaderboard">
         <h4>リーダーボード</h4>
@@ -134,6 +147,32 @@
             }
         }
         
+        // 概要の表示
+        function displaySummary(data) {
+            const summaryContent = document.getElementById('summaryContent');
+            
+            // 最初のラウンド情報を取得
+            const firstRound = data.rounds[0];
+
+            if (firstRound) {
+                const startTime = new Date(firstRound.startTime).toLocaleString();
+                const roundTime = firstRound.roundTime;
+                const movementOptions = firstRound.question?.panoramaQuestionPayload?.movementOptions || {};
+                const mapName = firstRound.question?.panoramaQuestionPayload?.mapName || '不明';
+                const mapSlug = firstRound.question?.panoramaQuestionPayload?.mapSlug || '不明';
+
+                summaryContent.innerHTML = `
+                    <p>Start time: ${startTime}</p>
+                    <p>Round time: ${roundTime} s</p>
+                    <p>Move: ${movementOptions.forbidMoving ? 'Yes' : 'No'}, 
+                    Zoom: ${movementOptions.forbidZooming ? 'Yes' : 'No'}, 
+                    Pan: ${movementOptions.forbidRotating ? 'Yes' : 'No'}</p>
+                    <p>Map: <a href="https://www.geoguessr.com/maps/${mapSlug}" target="_blank">${mapName}</a></p>
+                `;
+            } else {
+                summaryContent.textContent = 'ラウンド情報が見つかりません。';
+            }
+        }
         // リーダーボードの表示
         function displayLeaderboard(entries) {
             const leaderboardContainer = document.getElementById('leaderboardEntries');
@@ -190,6 +229,7 @@
                 .then(doc => {
                     if (doc.exists) {
                         const data = doc.data();
+                        displaySummary(data);
                         const coordinates = [];
 
                         // roundsが存在するか確認
