@@ -10,6 +10,7 @@
             height: 500px;
             width: 100%;
         }
+        
         /* リーダーボードのスタイル */
         #leaderboard {
             margin-top: 20px;
@@ -39,13 +40,12 @@
 <body>
     <h3>保存版 Live challenge result</h3>
     <div id="map"></div>
-
+    
     <!-- 概要表示エリア -->
     <div id="summary">
         <h4>概要</h4>
         <div id="summaryContent"></div>
     </div>
-
     <!-- リーダーボード表示エリア -->
     <div id="leaderboard">
         <h4>リーダーボード</h4>
@@ -68,6 +68,85 @@
         const collectionName = params.get('collection');
         const documentId = params.get('document');
 
+        // マップとピンの初期化
+        let map;  // マップ変数をスコープ外で宣言して、他の関数からもアクセス可能に
+        let markers = [];  // 既存のピンを管理するための配列
+        
+        function initMap(coordinates) {
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 5,
+                center: coordinates.length > 0 ? coordinates[0] : { lat: 35.6895, lng: 139.6917 },  // デフォルトの中心
+                streetViewControl: false  // ペグマン（ストリートビュー）を無効化
+            });
+        
+            // ピンを最初に全て消す
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];  // ピンをリセット
+        
+            // マップの範囲を動的に調整するための LatLngBounds オブジェクトを作成
+            const bounds = new google.maps.LatLngBounds();
+        
+            // 座標にピンを置く
+            coordinates.forEach((coord, index) => {
+                const marker = new google.maps.Marker({
+                    position: { lat: coord.lat, lng: coord.lng },
+                    map: map,
+                    label: `${index + 1}`,  // インデックス + 1 で番号をラベルとして表示
+                    title: `Lat: ${coord.lat}, Lng: ${coord.lng}`
+                });
+        
+                // ピンがクリックされた時にストリートビューのリンクに飛ぶ
+                marker.addListener('click', () => {
+                    window.open(coord.streetViewLink, '_blank');  // 新しいタブでリンクを開く
+                });
+        
+                markers.push(marker);  // ピンを配列に追加
+        
+                // 現在のピンの座標を bounds に追加
+                bounds.extend(marker.getPosition());
+            });
+        
+            // ピンの座標に応じてマップをリサイズし、すべてのピンが見えるようにする
+            if (coordinates.length > 0) {
+                map.fitBounds(bounds);  // すべてのピンが表示される範囲にズーム・センターを調整
+            }
+        }
+
+        // ピンを追跡するためのオブジェクト
+        const activeMarkers = {};
+        
+        // ピンの追加/削除
+        function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
+            if (activeMarkers[roundNumber]) {
+                // ピンが既に存在する場合、それを消す
+                activeMarkers[roundNumber].setMap(null);
+                delete activeMarkers[roundNumber];  // マーカーを削除
+            } else {
+                // 新しいピンを追加
+                const marker = new google.maps.Marker({
+                    position: { lat: lat, lng: lng },
+                    map: map,
+                    icon: {
+                        url: avatarUrl,  // アバター画像をピンに設定
+                        scaledSize: new google.maps.Size(40, 40)  // サイズ調整
+                    },
+                    title: `Lat: ${lat}, Lng: ${lng}`
+                });
+        
+                // ピンがクリックされた時にストリートビューのリンクに飛ぶ
+                marker.addListener('click', () => {
+                    window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
+                });
+        
+                // ピンを追跡
+                activeMarkers[roundNumber] = marker;
+        
+                // マップをその座標に移動し、ズームレベルを調整
+                map.setCenter({ lat: lat, lng: lng });
+                map.setZoom(10);
+            }
+        }
+        
         // 概要の表示
         function displaySummary(data) {
             const summaryContent = document.getElementById('summaryContent');
@@ -83,19 +162,18 @@
                 const mapSlug = firstRound.question?.panoramaQuestionPayload?.mapSlug || '不明';
 
                 summaryContent.innerHTML = `
-                    <p>開始時間: ${startTime}</p>
-                    <p>ラウンド時間: ${roundTime} 秒</p>
-                    <p>移動禁止: ${movementOptions.forbidMoving ? 'はい' : 'いいえ'}, 
-                    ズーム禁止: ${movementOptions.forbidZooming ? 'はい' : 'いいえ'}, 
-                    回転禁止: ${movementOptions.forbidRotating ? 'はい' : 'いいえ'}</p>
-                    <p>マップ名: ${mapName}</p>
-                    <p>マップSlug: ${mapSlug}</p>
+                    <p>Start time: ${startTime}</p>
+                    <p>Round time: ${roundTime} s</p>
+                    <p>Move: ${movementOptions.forbidMoving ? 'Yes' : 'No'}, 
+                    Zoom: ${movementOptions.forbidZooming ? 'Yes' : 'No'}, 
+                    Pan: ${movementOptions.forbidRotating ? 'Yes' : 'No'}</p>
+                    <p>Map: ${mapName}</p>
+                    <p>Map Slug: ${mapSlug}</p>
                 `;
             } else {
                 summaryContent.textContent = 'ラウンド情報が見つかりません。';
             }
         }
-
         // リーダーボードの表示
         function displayLeaderboard(entries) {
             const leaderboardContainer = document.getElementById('leaderboardEntries');
@@ -110,40 +188,52 @@
                 avatar.className = 'avatar';
         
                 const nameAndScore = document.createElement('div');
+                // 名前をリンクにして、entry.idをURLに設定
                 const nameLink = document.createElement('a');
-                nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;
+                nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;  // entry.idをURLとして使用
                 nameLink.textContent = entry.name;
+                nameLink.className = 'name-link'; // 必要に応じてクラスを追加
+            
                 nameAndScore.appendChild(nameLink);
-                nameAndScore.append(`: ${entry.totalScore} pts=`);
+                nameAndScore.append(`: ${entry.totalScore} pts`);
         
+                // ラウンドごとのスコアを追加
                 const roundScores = document.createElement('div');
+                roundScores.className = 'round-scores'; // 必要に応じてクラスを追加
+            
+                // ラウンドごとのスコアを表示
                 entry.guesses.forEach(guess => {
                     const roundScore = document.createElement('span');
                     roundScore.textContent = `R${guess.roundNumber}: ${guess.score} pts `;
+                    roundScore.className = 'round-score'; // 必要ならスタイル用のクラスを追加
+        
+                    // クリックイベントを追加して、ピンを追加/削除
                     roundScore.addEventListener('click', () => {
-                        toggleMarkerWithAvatar(guess.lat, guess.lng, avatar.src, guess.roundNumber);
+                        toggleMarkerWithAvatar(guess.lat, guess.lng, avatar.src, guess.roundNumber);  // クリック時にピンをトグル
                     });
+        
                     roundScores.appendChild(roundScore);
                 });
             
                 playerDiv.appendChild(avatar);
                 playerDiv.appendChild(nameAndScore);
-                playerDiv.appendChild(roundScores);
+                playerDiv.appendChild(roundScores);  // ラウンドごとのスコアを追加
                 leaderboardContainer.appendChild(playerDiv);
             });
         }
 
+
         if (collectionName && documentId) {
+            // ドキュメントが指定されている場合、そのドキュメントを取得
             db.collection(collectionName).doc(documentId)
                 .get()
                 .then(doc => {
                     if (doc.exists) {
                         const data = doc.data();
-
-                        // 概要を表示
                         displaySummary(data);
-
                         const coordinates = [];
+
+                        // roundsが存在するか確認
                         if (data.rounds && Array.isArray(data.rounds)) {
                             data.rounds.forEach(round => {
                                 const coordinate = round.answer?.coordinateAnswerPayload?.coordinate;
@@ -157,10 +247,13 @@
                             });
                         }
 
+                        // マップにピンを表示
                         initMap(coordinates);
 
+                        // topPlayersが存在するか確認
                         if (Array.isArray(data.topPlayers)) {
-                            displayLeaderboard(data.topPlayers);
+                            const entries = data.topPlayers;
+                            displayLeaderboard(entries);
                         } else {
                             document.getElementById('leaderboardEntries').textContent = 'リーダーボードはありません。';
                         }
