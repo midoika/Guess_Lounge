@@ -174,79 +174,86 @@
                 summaryContent.textContent = 'ラウンド情報が見つかりません。';
             }
         }
-        // リーダーボードの表示
-        function displayLeaderboard(entries) {
-            const leaderboardContainer = document.getElementById('leaderboardEntries');
-            leaderboardContainer.innerHTML = '';  // 既存の内容をクリア
-        
-            entries.forEach(entry => {
-                const playerDiv = document.createElement('div');
-                playerDiv.className = 'player';
-                // 順位を表示
-                const rankSpan = document.createElement('span');
-                let rankText = '';
-                if (index === 0) {
-                    rankText = '1st';
-                } else if (index === 1) {
-                    rankText = '2nd';
-                } else if (index === 2) {
-                    rankText = '3rd';
-                } else {
-                    rankText = `${index + 1}th`;
-                }
-                rankSpan.textContent = rankText + ' ';
-                rankSpan.className = 'rank';  // 必要に応じてクラスを追加
-                // アバター
-                const avatar = document.createElement('img');
-                avatar.src = "https://www.geoguessr.com/images/plain/" + entry.avatarPath;
-                avatar.className = 'avatar';
-        
-                const nameAndScore = document.createElement('div');
-                // 名前をリンクにして、entry.idをURLに設定
-                const nameLink = document.createElement('a');
-                nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;  // entry.idをURLとして使用
-                nameLink.textContent = entry.name;
-                nameLink.className = 'name-link'; // 必要に応じてクラスを追加
-            
-                nameAndScore.appendChild(nameLink);
-                nameAndScore.append(`: ${entry.totalScore}pts`);
-                // トータル時間の部分を小さく表示
-                const totalTimeSpan = document.createElement('span');
-                totalTimeSpan.textContent = `(${entry.totalTime}s)=`;
-                totalTimeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
-                // roundScoreにtotalTimeSpanを追加
-                const roundScores = document.createElement('div');
-                // ラウンドごとのスコアを追加
-                roundScores.appendChild(totalTimeSpan);
-                roundScores.className = 'round-scores'; // 必要に応じてクラスを追加
-            
-                // ラウンドごとのスコアを表示
-                entry.guesses.forEach(guess => {
-                    const roundScore = document.createElement('span');
-                    roundScore.textContent = ` R${guess.roundNumber}: ${guess.score}pts`;
-                    // 時間の部分を小さく表示
-                    const timeSpan = document.createElement('span');
-                    timeSpan.textContent = `(${guess.time}s) `;
-                    timeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
-                    // roundScoreにtimeSpanを追加
-                    roundScore.appendChild(timeSpan);
-                    roundScore.className = 'round-score'; // 必要ならスタイル用のクラスを追加
-        
-                    // クリックイベントを追加して、ピンを追加/削除
-                    roundScore.addEventListener('click', () => {
-                        toggleMarkerWithAvatar(guess.lat, guess.lng, avatar.src, guess.roundNumber);  // クリック時にピンをトグル
-                    });
-        
-                    roundScores.appendChild(roundScore);
-                });
-                // 順位、アバター、名前とスコア、ラウンドスコアをプレイヤーのdivに追加
-                playerDiv.appendChild(rankSpan);  // 順位をアバターの前に追加
-                playerDiv.appendChild(avatar);
-                playerDiv.appendChild(nameAndScore);
-                playerDiv.appendChild(roundScores);  // ラウンドごとのスコアを追加
-                leaderboardContainer.appendChild(playerDiv);
-            });
+// リーダーボードの表示
+function displayLeaderboard(entries) {
+    const leaderboardContainer = document.getElementById('leaderboardEntries');
+    leaderboardContainer.innerHTML = '';  // 既存の内容をクリア
+
+    entries.forEach((entry, index) => {
+        const playerDiv = document.createElement('div');
+        playerDiv.className = 'player';
+
+        // 順位を表示
+        const rankSpan = document.createElement('span');
+        let rankText = '';
+        if (index === 0) {
+            rankText = '1st';
+        } else if (index === 1) {
+            rankText = '2nd';
+        } else if (index === 2) {
+            rankText = '3rd';
+        } else {
+            rankText = `${index + 1}th`;
         }
+        rankSpan.textContent = rankText + ' ';
+        rankSpan.className = 'rank';  // 必要に応じてクラスを追加
+
+        // アバター
+        const avatar = document.createElement('img');
+        avatar.src = "https://www.geoguessr.com/images/plain/" + entry.avatarPath;
+        avatar.className = 'avatar';
+
+        const nameAndScore = document.createElement('div');
+        // 名前をリンクにして、entry.idをURLに設定
+        const nameLink = document.createElement('a');
+        nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;  // entry.idをURLとして使用
+        nameLink.textContent = entry.name;
+        nameLink.className = 'name-link'; // 必要に応じてクラスを追加
+
+        nameAndScore.appendChild(nameLink);
+        nameAndScore.append(`: ${entry.totalScore}pts`);
+
+        // トータル時間の部分を小さく表示
+        const totalTimeSpan = document.createElement('span');
+        totalTimeSpan.textContent = `(${entry.totalTime}s)=`;
+        totalTimeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
+
+        const roundScores = document.createElement('div');
+        // ラウンドごとのスコアを追加
+        roundScores.appendChild(totalTimeSpan);
+        roundScores.className = 'round-scores'; // 必要に応じてクラスを追加
+
+        // ラウンドごとのスコアを表示
+        entry.guesses.forEach(guess => {
+            const roundScore = document.createElement('span');
+            roundScore.textContent = ` R${guess.roundNumber}: ${guess.score}pts`;
+
+            // 時間の部分を小さく表示
+            const timeSpan = document.createElement('span');
+            timeSpan.textContent = `(${guess.time}s) `;
+            timeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
+
+            // roundScoreにtimeSpanを追加
+            roundScore.appendChild(timeSpan);
+            roundScore.className = 'round-score'; // 必要ならスタイル用のクラスを追加
+
+            // クリックイベントを追加して、ピンを追加/削除
+            roundScore.addEventListener('click', () => {
+                toggleMarkerWithAvatar(guess.lat, guess.lng, avatar.src, guess.roundNumber);  // クリック時にピンをトグル
+            });
+
+            roundScores.appendChild(roundScore);
+        });
+
+        // 順位、アバター、名前とスコア、ラウンドスコアをプレイヤーのdivに追加
+        playerDiv.appendChild(rankSpan);  // 順位をアバターの前に追加
+        playerDiv.appendChild(avatar);
+        playerDiv.appendChild(nameAndScore);
+        playerDiv.appendChild(roundScores);  // ラウンドごとのスコアを追加
+        leaderboardContainer.appendChild(playerDiv);
+    });
+}
+
 
 
         if (collectionName && documentId) {
