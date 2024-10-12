@@ -172,7 +172,7 @@
                 const mapSlug = firstRound.question?.panoramaQuestionPayload?.mapSlug || '不明';
 
                 summaryContent.innerHTML = `
-                    <p>Start time: ${startTime}   Round time: ${roundTime} ${movementOptions.forbidMoving ? 'No Move ' : 'Move '}, 
+                    <p>Start time: ${startTime}   Round time: ${roundTime}s   ${movementOptions.forbidMoving ? 'No Move ' : 'Move '}, 
                     ${movementOptions.forbidRotating ? 'No Pan ' : 'Pan '},
                     ${movementOptions.forbidZooming ? 'No zoom ' : 'Zoom '}</p>
                     <p>Map: <a href="https://www.geoguessr.com/maps/${mapSlug}" target="_blank">${mapName}</a></p>
