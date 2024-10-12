@@ -204,7 +204,13 @@
                 // ラウンドごとのスコアを表示
                 entry.guesses.forEach(guess => {
                     const roundScore = document.createElement('span');
-                    roundScore.textContent = `R${guess.roundNumber}: ${guess.score} pts(${guess.time}) `;
+                    roundScore.textContent = `R${guess.roundNumber}: ${guess.score} `;
+                    // 時間の部分を小さく表示
+                    const timeSpan = document.createElement('span');
+                    timeSpan.textContent = `(${guess.time}s) `;
+                    timeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
+                    // roundScoreにtimeSpanを追加
+                    roundScore.appendChild(timeSpan);
                     roundScore.className = 'round-score'; // 必要ならスタイル用のクラスを追加
         
                     // クリックイベントを追加して、ピンを追加/削除
