@@ -201,10 +201,9 @@
                 totalTimeSpan.textContent = `(${entry.totalTime}s)=`;
                 totalTimeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
                 // roundScoreにtotalTimeSpanを追加
+                const roundScores = document.createElement('div');
                 // ラウンドごとのスコアを追加
                 roundScores.appendChild(totalTimeSpan);
-                
-                const roundScores = document.createElement('div');
                 roundScores.className = 'round-scores'; // 必要に応じてクラスを追加
             
                 // ラウンドごとのスコアを表示
