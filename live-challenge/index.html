@@ -113,40 +113,46 @@
             }
         }
 
-        // ピンを追跡するためのオブジェクト
-        const activeMarkers = {};
-        
-        // ピンの追加/削除
-        function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
-            if (activeMarkers[roundNumber]) {
-                // ピンが既に存在する場合、それを消す
-                activeMarkers[roundNumber].setMap(null);
-                delete activeMarkers[roundNumber];  // マーカーを削除
-            } else {
-                // 新しいピンを追加
-                const marker = new google.maps.Marker({
-                    position: { lat: lat, lng: lng },
-                    map: map,
-                    icon: {
-                        url: avatarUrl,  // アバター画像をピンに設定
-                        scaledSize: new google.maps.Size(40, 40)  // サイズ調整
-                    },
-                    title: `Lat: ${lat}, Lng: ${lng}`
-                });
-        
-                // ピンがクリックされた時にストリートビューのリンクに飛ぶ
-                marker.addListener('click', () => {
-                    window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
-                });
-        
-                // ピンを追跡
-                activeMarkers[roundNumber] = marker;
-        
-                // マップをその座標に移動し、ズームレベルを調整
-                map.setCenter({ lat: lat, lng: lng });
-                map.setZoom(10);
-            }
-        }
+// ピンを追跡するためのオブジェクト（2次元）
+const activeMarkers = {};
+
+// ピンの追加/削除
+function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
+    // ラウンドごとのマーカーオブジェクトが存在しない場合、初期化
+    if (!activeMarkers[roundNumber]) {
+        activeMarkers[roundNumber] = {};
+    }
+
+    // 該当するラウンドとアバターのマーカーが既に存在する場合、それを消す
+    if (activeMarkers[roundNumber][avatarUrl]) {
+        activeMarkers[roundNumber][avatarUrl].setMap(null);  // マーカーを地図から削除
+        delete activeMarkers[roundNumber][avatarUrl];  // マーカーをオブジェクトから削除
+    } else {
+        // 新しいピンを追加
+        const marker = new google.maps.Marker({
+            position: { lat: lat, lng: lng },
+            map: map,
+            icon: {
+                url: avatarUrl,  // アバター画像をピンに設定
+                scaledSize: new google.maps.Size(40, 40)  // サイズ調整
+            },
+            title: `Lat: ${lat}, Lng: ${lng}`
+        });
+
+        // ピンがクリックされた時にストリートビューのリンクに飛ぶ
+        marker.addListener('click', () => {
+            window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
+        });
+
+        // ピンを追跡
+        activeMarkers[roundNumber][avatarUrl] = marker;
+
+        // マップをその座標に移動し、ズームレベルを調整
+        map.setCenter({ lat: lat, lng: lng });
+        map.setZoom(10);
+    }
+}
+
         
         // 概要の表示
         function displaySummary(data) {
