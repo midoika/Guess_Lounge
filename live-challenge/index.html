@@ -195,10 +195,10 @@
                 nameLink.className = 'name-link'; // 必要に応じてクラスを追加
             
                 nameAndScore.appendChild(nameLink);
-                nameAndScore.append(`: ${entry.totalScore}pts= `);
+                nameAndScore.append(`: ${entry.totalScore}pts`);
                 // トータル時間の部分を小さく表示
                 const totalTimeSpan = document.createElement('span');
-                totalTimeSpan.textContent = `(${guess.time}s) `;
+                totalTimeSpan.textContent = `(${guess.totalTime}s)=`;
                 totalTimeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
                 // roundScoreにtotalTimeSpanを追加
                 // ラウンドごとのスコアを追加
