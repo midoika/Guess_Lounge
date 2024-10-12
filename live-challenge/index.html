@@ -113,45 +113,49 @@
             }
         }
 
-// ピンを追跡するためのオブジェクト（2次元）
-const activeMarkers = {};
+        // ピンを追跡するためのオブジェクト（2次元）
+        const activeMarkers = {};
+        
+        // ピンの追加/削除
+        function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
+            // ラウンドごとのマーカーオブジェクトが存在しない場合、初期化
+            if (!activeMarkers[roundNumber]) {
+                activeMarkers[roundNumber] = {};
+            }
+        
+            // 該当するラウンドとアバターのマーカーが既に存在する場合、それを消して false を返す
+            if (activeMarkers[roundNumber][avatarUrl]) {
+                activeMarkers[roundNumber][avatarUrl].setMap(null);  // マーカーを地図から削除
+                delete activeMarkers[roundNumber][avatarUrl];  // マーカーをオブジェクトから削除
+                return false;  // マーカーを消したので false を返す
+            } else {
+                // 新しいピンを追加して true を返す
+                const marker = new google.maps.Marker({
+                    position: { lat: lat, lng: lng },
+                    map: map,
+                    icon: {
+                        url: avatarUrl,  // アバター画像をピンに設定
+                        scaledSize: new google.maps.Size(40, 40)  // サイズ調整
+                    },
+                    title: `Lat: ${lat}, Lng: ${lng}`
+                });
+        
+                // ピンがクリックされた時にストリートビューのリンクに飛ぶ
+                marker.addListener('click', () => {
+                    window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
+                });
+        
+                // ピンを追跡
+                activeMarkers[roundNumber][avatarUrl] = marker;
+        
+                // マップをその座標に移動し、ズームレベルを調整
+                map.setCenter({ lat: lat, lng: lng });
+                map.setZoom(10);
+        
+                return true;  // 新しいピンを追加したので true を返す
+            }
+        }
 
-// ピンの追加/削除
-function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
-    // ラウンドごとのマーカーオブジェクトが存在しない場合、初期化
-    if (!activeMarkers[roundNumber]) {
-        activeMarkers[roundNumber] = {};
-    }
-
-    // 該当するラウンドとアバターのマーカーが既に存在する場合、それを消す
-    if (activeMarkers[roundNumber][avatarUrl]) {
-        activeMarkers[roundNumber][avatarUrl].setMap(null);  // マーカーを地図から削除
-        delete activeMarkers[roundNumber][avatarUrl];  // マーカーをオブジェクトから削除
-    } else {
-        // 新しいピンを追加
-        const marker = new google.maps.Marker({
-            position: { lat: lat, lng: lng },
-            map: map,
-            icon: {
-                url: avatarUrl,  // アバター画像をピンに設定
-                scaledSize: new google.maps.Size(40, 40)  // サイズ調整
-            },
-            title: `Lat: ${lat}, Lng: ${lng}`
-        });
-
-        // ピンがクリックされた時にストリートビューのリンクに飛ぶ
-        marker.addListener('click', () => {
-            window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
-        });
-
-        // ピンを追跡
-        activeMarkers[roundNumber][avatarUrl] = marker;
-
-        // マップをその座標に移動し、ズームレベルを調整
-        map.setCenter({ lat: lat, lng: lng });
-        map.setZoom(10);
-    }
-}
 
         
         // 概要の表示
@@ -233,23 +237,31 @@ function displayLeaderboard(entries) {
         entry.guesses.forEach(guess => {
             const roundScore = document.createElement('span');
             roundScore.textContent = ` R${guess.roundNumber}: ${guess.score}pts`;
-
+        
             // 時間の部分を小さく表示
             const timeSpan = document.createElement('span');
             timeSpan.textContent = `(${guess.time}s) `;
             timeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
-
+        
             // roundScoreにtimeSpanを追加
             roundScore.appendChild(timeSpan);
             roundScore.className = 'round-score'; // 必要ならスタイル用のクラスを追加
-
+        
             // クリックイベントを追加して、ピンを追加/削除
             roundScore.addEventListener('click', () => {
-                toggleMarkerWithAvatar(guess.lat, guess.lng, avatar.src, guess.roundNumber);  // クリック時にピンをトグル
+                const result = toggleMarkerWithAvatar(guess.lat, guess.lng, avatar.src, guess.roundNumber);  // クリック時にピンをトグル
+        
+                // 返り値に応じて文字色を変更
+                if (result) {
+                    roundScore.style.color = 'yellowgreen';  // 真理値がtrueなら黄緑色
+                } else {
+                    roundScore.style.color = '';  // falseなら通常の色に戻す
+                }
             });
-
+        
             roundScores.appendChild(roundScore);
         });
+
 
         // 順位、アバター、名前とスコア、ラウンドスコアをプレイヤーのdivに追加
         playerDiv.appendChild(rankSpan);  // 順位をアバターの前に追加
