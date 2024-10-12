@@ -182,7 +182,21 @@
             entries.forEach(entry => {
                 const playerDiv = document.createElement('div');
                 playerDiv.className = 'player';
-        
+                // 順位を表示
+                const rankSpan = document.createElement('span');
+                let rankText = '';
+                if (index === 0) {
+                    rankText = '1st';
+                } else if (index === 1) {
+                    rankText = '2nd';
+                } else if (index === 2) {
+                    rankText = '3rd';
+                } else {
+                    rankText = `${index + 1}th`;
+                }
+                rankSpan.textContent = rankText + ' ';
+                rankSpan.className = 'rank';  // 必要に応じてクラスを追加
+                // アバター
                 const avatar = document.createElement('img');
                 avatar.src = "https://www.geoguessr.com/images/plain/" + entry.avatarPath;
                 avatar.className = 'avatar';
@@ -225,7 +239,8 @@
         
                     roundScores.appendChild(roundScore);
                 });
-            
+                // 順位、アバター、名前とスコア、ラウンドスコアをプレイヤーのdivに追加
+                playerDiv.appendChild(rankSpan);  // 順位をアバターの前に追加
                 playerDiv.appendChild(avatar);
                 playerDiv.appendChild(nameAndScore);
                 playerDiv.appendChild(roundScores);  // ラウンドごとのスコアを追加
