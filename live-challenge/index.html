@@ -195,7 +195,7 @@
                 nameLink.className = 'name-link'; // 必要に応じてクラスを追加
             
                 nameAndScore.appendChild(nameLink);
-                nameAndScore.append(`: ${entry.totalScore} pts =`);
+                nameAndScore.append(`: ${entry.totalScore} pts= `);
         
                 // ラウンドごとのスコアを追加
                 const roundScores = document.createElement('div');
@@ -204,7 +204,7 @@
                 // ラウンドごとのスコアを表示
                 entry.guesses.forEach(guess => {
                     const roundScore = document.createElement('span');
-                    roundScore.textContent = `R${guess.roundNumber}: ${guess.score} pts `;
+                    roundScore.textContent = `R${guess.roundNumber}: ${guess.score} pts(${guess.time}) `;
                     roundScore.className = 'round-score'; // 必要ならスタイル用のクラスを追加
         
                     // クリックイベントを追加して、ピンを追加/削除
