@@ -196,15 +196,21 @@
             
                 nameAndScore.appendChild(nameLink);
                 nameAndScore.append(`: ${entry.totalScore}pts= `);
-        
+                // トータル時間の部分を小さく表示
+                const totalTimeSpan = document.createElement('span');
+                totalTimeSpan.textContent = `(${guess.time}s) `;
+                totalTimeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
+                // roundScoreにtotalTimeSpanを追加
                 // ラウンドごとのスコアを追加
+                roundScore.appendChild(totalTimeSpan);
+                
                 const roundScores = document.createElement('div');
                 roundScores.className = 'round-scores'; // 必要に応じてクラスを追加
             
                 // ラウンドごとのスコアを表示
                 entry.guesses.forEach(guess => {
                     const roundScore = document.createElement('span');
-                    roundScore.textContent = `R${guess.roundNumber}: ${guess.score}pts`;
+                    roundScore.textContent = ` R${guess.roundNumber}: ${guess.score}pts`;
                     // 時間の部分を小さく表示
                     const timeSpan = document.createElement('span');
                     timeSpan.textContent = `(${guess.time}s) `;
