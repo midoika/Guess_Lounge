@@ -122,6 +122,10 @@
             if (!activeMarkers[roundNumber]) {
                 activeMarkers[roundNumber] = {};
             }
+            // ラウンドごとのポリゴンオブジェクトが存在しない場合、初期化
+            if (!activePolylines[roundNumber]) {
+                activePolylines[roundNumber] = {};
+            }
         
             // 該当するラウンドとアバターのマーカーが既に存在する場合、それを消して false を返す
             if (activeMarkers[roundNumber][avatarUrl]) {
@@ -130,9 +134,9 @@
                 delete activeMarkers[roundNumber][avatarUrl];
         
                 // 点線が存在する場合、消す
-                if (activePolylines[roundNumber][avatarUrl]) {
-                    activePolylines[roundNumber][avatarUrl].setMap(null);
-                    delete activePolylines[roundNumber][avatarUrl];
+                if (activePolylines[roundNumber]) {
+                    activePolylines[roundNumber].setMap(null);
+                    delete activePolylines[roundNumber];
                 }
         
                 return false;  // マーカーを消したので false を返す
@@ -182,7 +186,7 @@
                     polyline.setMap(map);
                 
                     // 点線を追跡
-                    activePolylines[roundNumber][avatarUrl] = polyline;
+                    activePolylines[roundNumber] = polyline;
                 }
 
         
