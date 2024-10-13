@@ -114,18 +114,28 @@
 
         // ピンを追跡するためのオブジェクト（2次元）
         const activeMarkers = {};
+        const activePolylines = {};  // 点線を管理するためのオブジェクト（2次元）
         
         // ピンの追加/削除
         function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
             // ラウンドごとのマーカーオブジェクトが存在しない場合、初期化
             if (!activeMarkers[roundNumber]) {
                 activeMarkers[roundNumber] = {};
+                activePolylines[roundNumber] = {};  // 点線の追跡オブジェクトも初期化
             }
         
             // 該当するラウンドとアバターのマーカーが既に存在する場合、それを消して false を返す
             if (activeMarkers[roundNumber][avatarUrl]) {
-                activeMarkers[roundNumber][avatarUrl].setMap(null);  // マーカーを地図から削除
-                delete activeMarkers[roundNumber][avatarUrl];  // マーカーをオブジェクトから削除
+                // マーカーを地図から削除
+                activeMarkers[roundNumber][avatarUrl].setMap(null);
+                delete activeMarkers[roundNumber][avatarUrl];
+        
+                // 点線が存在する場合、消す
+                if (activePolylines[roundNumber][avatarUrl]) {
+                    activePolylines[roundNumber][avatarUrl].setMap(null);
+                    delete activePolylines[roundNumber][avatarUrl];
+                }
+        
                 return false;  // マーカーを消したので false を返す
             } else {
                 // 新しいピンを追加して true を返す
@@ -150,6 +160,31 @@
                 // マップをその座標に移動し、ズームレベルを調整
                 map.setCenter({ lat: lat, lng: lng });
                 map.setZoom(12);
+        
+                // coordinates.forEachで該当するインデックスのマーカーを取得し、点線を引く
+                if (markers[roundNumber - 1]) {
+                    const polyline = new google.maps.Polyline({
+                        path: [
+                            markers[roundNumber - 1].getPosition(),  // ラウンド番号とインデックスを一致させたマーカーの座標
+                            marker.getPosition()  // 現在のピンの座標
+                        ],
+                        geodesic: true,
+                        strokeColor: '#000000',  // 線の色を黒に設定
+                        strokeOpacity: 0,  // 実際の線の色は透明に
+                        strokeWeight: 2,
+                        icons: [{
+                            icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },  // 点線のパス
+                            offset: '0',
+                            repeat: '10px'  // 点線の繰り返し間隔
+                        }]
+                    });
+        
+                    // 点線を地図に追加
+                    polyline.setMap(map);
+        
+                    // 点線を追跡
+                    activePolylines[roundNumber][avatarUrl] = polyline;
+                }
         
                 return true;  // 新しいピンを追加したので true を返す
             }
