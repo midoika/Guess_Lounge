@@ -71,6 +71,47 @@
         let map;  // マップ変数をスコープ外で宣言して、他の関数からもアクセス可能に
         let markers = [];  // 既存のピンを管理するための配列
         
+        function initMap(coordinates) {
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 5,
+                center: coordinates.length > 0 ? coordinates[0] : { lat: 35.6895, lng: 139.6917 },  // デフォルトの中心
+                streetViewControl: false,  // ペグマン（ストリートビュー）を無効化
+                gestureHandling: 'greedy'  // Ctrlなしでもズームできるようにする
+            });
+        
+            // ピンを最初に全て消す
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];  // ピンをリセット
+        
+            // マップの範囲を動的に調整するための LatLngBounds オブジェクトを作成
+            const bounds = new google.maps.LatLngBounds();
+        
+            // 座標にピンを置く
+            coordinates.forEach((coord, index) => {
+                const marker = new google.maps.Marker({
+                    position: { lat: coord.lat, lng: coord.lng },
+                    map: map,
+                    label: `${index + 1}`,  // インデックス + 1 で番号をラベルとして表示
+                    title: `Lat: ${coord.lat}, Lng: ${coord.lng}`
+                });
+        
+                // ピンがクリックされた時にストリートビューのリンクに飛ぶ
+                marker.addListener('click', () => {
+                    window.open(coord.streetViewLink, '_blank');  // 新しいタブでリンクを開く
+                });
+        
+                markers.push(marker);  // ピンを配列に追加
+        
+                // 現在のピンの座標を bounds に追加
+                bounds.extend(marker.getPosition());
+            });
+        
+            // ピンの座標に応じてマップをリサイズし、すべてのピンが見えるようにする
+            if (coordinates.length > 0) {
+                map.fitBounds(bounds);  // すべてのピンが表示される範囲にズーム・センターを調整
+            }
+        }
+
         // ピンを追跡するためのオブジェクト（2次元）
         const activeMarkers = {};
         const activePolylines = {};  // 点線を管理するためのオブジェクト
@@ -147,8 +188,6 @@
                 return true;  // 新しいピンを追加したので true を返す
             }
         }
-
-
 
         
         // 概要の表示
