@@ -168,22 +168,23 @@
                             marker.getPosition()  // 現在のピンの座標
                         ],
                         geodesic: true,
-                        strokeColor: '#FF0000',
-                        strokeOpacity: 0.5,
+                        strokeColor: '#000000',  // 線の色を黒に設定
+                        strokeOpacity: 0,  // 実際の線の色は透明に
                         strokeWeight: 2,
                         icons: [{
-                            icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4 },  // 点線の設定
+                            icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },  // 点線のパス
                             offset: '0',
-                            repeat: '10px'
+                            repeat: '10px'  // 点線の繰り返し間隔
                         }]
                     });
-        
+                
                     // 点線を地図に追加
                     polyline.setMap(map);
-        
+                
                     // 点線を追跡
                     activePolylines[roundNumber] = polyline;
                 }
+
         
                 return true;  // 新しいピンを追加したので true を返す
             }
