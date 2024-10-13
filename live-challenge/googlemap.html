@@ -119,8 +119,8 @@
         // ピンの追加/削除
         function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
             // ラウンドごとのマーカーオブジェクトが存在しない場合、初期化
-            if (!activeMarkers[roundNumber][avatarUrl]) {
-                activeMarkers[roundNumber][avatarUrl] = {};
+            if (!activeMarkers[roundNumber]) {
+                activeMarkers[roundNumber] = {};
             }
         
             // 該当するラウンドとアバターのマーカーが既に存在する場合、それを消して false を返す
@@ -130,9 +130,9 @@
                 delete activeMarkers[roundNumber][avatarUrl];
         
                 // 点線が存在する場合、消す
-                if (activePolylines[roundNumber]) {
-                    activePolylines[roundNumber].setMap(null);
-                    delete activePolylines[roundNumber];
+                if (activePolylines[roundNumber][avatarUrl]) {
+                    activePolylines[roundNumber][avatarUrl].setMap(null);
+                    delete activePolylines[roundNumber][avatarUrl];
                 }
         
                 return false;  // マーカーを消したので false を返す
@@ -182,7 +182,7 @@
                     polyline.setMap(map);
                 
                     // 点線を追跡
-                    activePolylines[roundNumber] = polyline;
+                    activePolylines[roundNumber][avatarUrl] = polyline;
                 }
 
         
