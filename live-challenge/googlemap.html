@@ -5,10 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>live challenge archiver</title>
     <style>
+        /* 概要のスタイル */
+        #summary {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+        }
         /* マップのサイズを指定 */
         #map {
             height: 500px;
-            width: 100%;
+            width: 95%;
         }
         
         /* リーダーボードのスタイル */
@@ -28,27 +35,19 @@
             height: 40px;
             margin-right: 10px;
         }
-        /* 概要のスタイル */
-        #summary {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #f1f1f1;
-            border: 1px solid #ccc;
-        }
     </style>
 </head>
 <body>
     <h3>保存版 Live challenge result</h3>
-    <div id="map"></div>
-    
     <!-- 概要表示エリア -->
     <div id="summary">
-        <h4>概要</h4>
         <div id="summaryContent"></div>
     </div>
+    <div id="map"></div>
+    
     <!-- リーダーボード表示エリア -->
     <div id="leaderboard">
-        <h4>リーダーボード</h4>
+        <h4>リーダーボード (点数クリックでゲス地点へズーム。Click scores to zoom in the places they guessed.)</h4>
         <div id="leaderboardEntries"></div>
     </div>
 
@@ -72,57 +71,32 @@
         let map;  // マップ変数をスコープ外で宣言して、他の関数からもアクセス可能に
         let markers = [];  // 既存のピンを管理するための配列
         
-        function initMap(coordinates) {
-            map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 5,
-                center: coordinates.length > 0 ? coordinates[0] : { lat: 35.6895, lng: 139.6917 },  // デフォルトの中心
-                streetViewControl: false  // ペグマン（ストリートビュー）を無効化
-            });
-        
-            // ピンを最初に全て消す
-            markers.forEach(marker => marker.setMap(null));
-            markers = [];  // ピンをリセット
-        
-            // マップの範囲を動的に調整するための LatLngBounds オブジェクトを作成
-            const bounds = new google.maps.LatLngBounds();
-        
-            // 座標にピンを置く
-            coordinates.forEach((coord, index) => {
-                const marker = new google.maps.Marker({
-                    position: { lat: coord.lat, lng: coord.lng },
-                    map: map,
-                    label: `${index + 1}`,  // インデックス + 1 で番号をラベルとして表示
-                    title: `Lat: ${coord.lat}, Lng: ${coord.lng}`
-                });
-        
-                // ピンがクリックされた時にストリートビューのリンクに飛ぶ
-                marker.addListener('click', () => {
-                    window.open(coord.streetViewLink, '_blank');  // 新しいタブでリンクを開く
-                });
-        
-                markers.push(marker);  // ピンを配列に追加
-        
-                // 現在のピンの座標を bounds に追加
-                bounds.extend(marker.getPosition());
-            });
-        
-            // ピンの座標に応じてマップをリサイズし、すべてのピンが見えるようにする
-            if (coordinates.length > 0) {
-                map.fitBounds(bounds);  // すべてのピンが表示される範囲にズーム・センターを調整
-            }
-        }
-
-        // ピンを追跡するためのオブジェクト
+        // ピンを追跡するためのオブジェクト（2次元）
         const activeMarkers = {};
+        const activePolylines = {};  // 点線を管理するためのオブジェクト
         
         // ピンの追加/削除
         function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
-            if (activeMarkers[roundNumber]) {
-                // ピンが既に存在する場合、それを消す
-                activeMarkers[roundNumber].setMap(null);
-                delete activeMarkers[roundNumber];  // マーカーを削除
+            // ラウンドごとのマーカーオブジェクトが存在しない場合、初期化
+            if (!activeMarkers[roundNumber]) {
+                activeMarkers[roundNumber] = {};
+            }
+        
+            // 該当するラウンドとアバターのマーカーが既に存在する場合、それを消して false を返す
+            if (activeMarkers[roundNumber][avatarUrl]) {
+                // マーカーを地図から削除
+                activeMarkers[roundNumber][avatarUrl].setMap(null);
+                delete activeMarkers[roundNumber][avatarUrl];
+        
+                // 点線が存在する場合、消す
+                if (activePolylines[roundNumber]) {
+                    activePolylines[roundNumber].setMap(null);
+                    delete activePolylines[roundNumber];
+                }
+        
+                return false;  // マーカーを消したので false を返す
             } else {
-                // 新しいピンを追加
+                // 新しいピンを追加して true を返す
                 const marker = new google.maps.Marker({
                     position: { lat: lat, lng: lng },
                     map: map,
@@ -139,13 +113,43 @@
                 });
         
                 // ピンを追跡
-                activeMarkers[roundNumber] = marker;
+                activeMarkers[roundNumber][avatarUrl] = marker;
         
                 // マップをその座標に移動し、ズームレベルを調整
                 map.setCenter({ lat: lat, lng: lng });
-                map.setZoom(10);
+                map.setZoom(12);
+        
+                // coordinates.forEachで該当するインデックスのマーカーを取得し、点線を引く
+                if (markers[roundNumber - 1]) {
+                    const polyline = new google.maps.Polyline({
+                        path: [
+                            markers[roundNumber - 1].getPosition(),  // ラウンド番号とインデックスを一致させたマーカーの座標
+                            marker.getPosition()  // 現在のピンの座標
+                        ],
+                        geodesic: true,
+                        strokeColor: '#FF0000',
+                        strokeOpacity: 0.5,
+                        strokeWeight: 2,
+                        icons: [{
+                            icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 4 },  // 点線の設定
+                            offset: '0',
+                            repeat: '10px'
+                        }]
+                    });
+        
+                    // 点線を地図に追加
+                    polyline.setMap(map);
+        
+                    // 点線を追跡
+                    activePolylines[roundNumber] = polyline;
+                }
+        
+                return true;  // 新しいピンを追加したので true を返す
             }
         }
+
+
+
         
         // 概要の表示
         function displaySummary(data) {
@@ -162,65 +166,103 @@
                 const mapSlug = firstRound.question?.panoramaQuestionPayload?.mapSlug || '不明';
 
                 summaryContent.innerHTML = `
-                    <p>Start time: ${startTime}</p>
-                    <p>Round time: ${roundTime} s</p>
-                    <p>Move: ${movementOptions.forbidMoving ? 'Yes' : 'No'}, 
-                    Zoom: ${movementOptions.forbidZooming ? 'Yes' : 'No'}, 
-                    Pan: ${movementOptions.forbidRotating ? 'Yes' : 'No'}</p>
-                    <p>Map: ${mapName}</p>
-                    <p>Map Slug: ${mapSlug}</p>
+                    <p>Start: ${startTime}   time: ${roundTime}s   ${movementOptions.forbidMoving ? 'No Move ' : 'Move '}, 
+                    ${movementOptions.forbidRotating ? 'No Pan ' : 'Pan '},
+                    ${movementOptions.forbidZooming ? 'No zoom ' : 'Zoom '}</p>
+                    <p>Map: <a href="https://www.geoguessr.com/maps/${mapSlug}" target="_blank">${mapName}</a></p>
                 `;
             } else {
                 summaryContent.textContent = 'ラウンド情報が見つかりません。';
             }
         }
-        // リーダーボードの表示
-        function displayLeaderboard(entries) {
-            const leaderboardContainer = document.getElementById('leaderboardEntries');
-            leaderboardContainer.innerHTML = '';  // 既存の内容をクリア
-        
-            entries.forEach(entry => {
-                const playerDiv = document.createElement('div');
-                playerDiv.className = 'player';
-        
-                const avatar = document.createElement('img');
-                avatar.src = "https://www.geoguessr.com/images/plain/" + entry.avatarPath;
-                avatar.className = 'avatar';
-        
-                const nameAndScore = document.createElement('div');
-                // 名前をリンクにして、entry.idをURLに設定
-                const nameLink = document.createElement('a');
-                nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;  // entry.idをURLとして使用
-                nameLink.textContent = entry.name;
-                nameLink.className = 'name-link'; // 必要に応じてクラスを追加
-            
-                nameAndScore.appendChild(nameLink);
-                nameAndScore.append(`: ${entry.totalScore} pts`);
-        
-                // ラウンドごとのスコアを追加
-                const roundScores = document.createElement('div');
-                roundScores.className = 'round-scores'; // 必要に応じてクラスを追加
-            
-                // ラウンドごとのスコアを表示
-                entry.guesses.forEach(guess => {
-                    const roundScore = document.createElement('span');
-                    roundScore.textContent = `R${guess.roundNumber}: ${guess.score} pts `;
-                    roundScore.className = 'round-score'; // 必要ならスタイル用のクラスを追加
-        
-                    // クリックイベントを追加して、ピンを追加/削除
-                    roundScore.addEventListener('click', () => {
-                        toggleMarkerWithAvatar(guess.lat, guess.lng, avatar.src, guess.roundNumber);  // クリック時にピンをトグル
-                    });
-        
-                    roundScores.appendChild(roundScore);
-                });
-            
-                playerDiv.appendChild(avatar);
-                playerDiv.appendChild(nameAndScore);
-                playerDiv.appendChild(roundScores);  // ラウンドごとのスコアを追加
-                leaderboardContainer.appendChild(playerDiv);
-            });
+// リーダーボードの表示
+function displayLeaderboard(entries) {
+    const leaderboardContainer = document.getElementById('leaderboardEntries');
+    leaderboardContainer.innerHTML = '';  // 既存の内容をクリア
+
+    entries.forEach((entry, index) => {
+        const playerDiv = document.createElement('div');
+        playerDiv.className = 'player';
+
+        // 順位を表示
+        const rankSpan = document.createElement('span');
+        let rankText = '';
+        if (index === 0) {
+            rankText = '1st';
+        } else if (index === 1) {
+            rankText = '2nd';
+        } else if (index === 2) {
+            rankText = '3rd';
+        } else {
+            rankText = `${index + 1}th`;
         }
+        rankSpan.textContent = rankText + ' ';
+        rankSpan.className = 'rank';  // 必要に応じてクラスを追加
+
+        // アバター
+        const avatar = document.createElement('img');
+        avatar.src = "https://www.geoguessr.com/images/plain/" + entry.avatarPath;
+        avatar.className = 'avatar';
+
+        const nameAndScore = document.createElement('div');
+        // 名前をリンクにして、entry.idをURLに設定
+        const nameLink = document.createElement('a');
+        nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;  // entry.idをURLとして使用
+        nameLink.textContent = entry.name;
+        nameLink.className = 'name-link'; // 必要に応じてクラスを追加
+
+        nameAndScore.appendChild(nameLink);
+        nameAndScore.append(`: ${entry.totalScore}pts`);
+
+        // トータル時間の部分を小さく表示
+        const totalTimeSpan = document.createElement('span');
+        totalTimeSpan.textContent = `(${entry.totalTime}s)=`;
+        totalTimeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
+
+        const roundScores = document.createElement('div');
+        // ラウンドごとのスコアを追加
+        roundScores.appendChild(totalTimeSpan);
+        roundScores.className = 'round-scores'; // 必要に応じてクラスを追加
+
+        // ラウンドごとのスコアを表示
+        entry.guesses.forEach(guess => {
+            const roundScore = document.createElement('span');
+            roundScore.textContent = ` R${guess.roundNumber}: ${guess.score}pts`;
+        
+            // 時間の部分を小さく表示
+            const timeSpan = document.createElement('span');
+            timeSpan.textContent = `(${guess.time}s) `;
+            timeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
+        
+            // roundScoreにtimeSpanを追加
+            roundScore.appendChild(timeSpan);
+            roundScore.className = 'round-score'; // 必要ならスタイル用のクラスを追加
+        
+            // クリックイベントを追加して、ピンを追加/削除
+            roundScore.addEventListener('click', () => {
+                const result = toggleMarkerWithAvatar(guess.lat, guess.lng, avatar.src, guess.roundNumber);  // クリック時にピンをトグル
+        
+                // 返り値に応じて文字色を変更
+                if (result) {
+                    roundScore.style.color = 'yellowgreen';  // 真理値がtrueなら黄緑色
+                } else {
+                    roundScore.style.color = '';  // falseなら通常の色に戻す
+                }
+            });
+        
+            roundScores.appendChild(roundScore);
+        });
+
+
+        // 順位、アバター、名前とスコア、ラウンドスコアをプレイヤーのdivに追加
+        playerDiv.appendChild(rankSpan);  // 順位をアバターの前に追加
+        playerDiv.appendChild(avatar);
+        playerDiv.appendChild(nameAndScore);
+        playerDiv.appendChild(roundScores);  // ラウンドごとのスコアを追加
+        leaderboardContainer.appendChild(playerDiv);
+    });
+}
+
 
 
         if (collectionName && documentId) {
