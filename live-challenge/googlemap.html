@@ -114,17 +114,14 @@
 
         // ピンを追跡するためのオブジェクト（2次元）
         const activeMarkers = {};
-        const activePolylines = {};  // 点線を管理するためのオブジェクト
+        const activePolylines = {};  // 点線を管理するためのオブジェクト（2次元）
         
         // ピンの追加/削除
         function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
             // ラウンドごとのマーカーオブジェクトが存在しない場合、初期化
             if (!activeMarkers[roundNumber]) {
                 activeMarkers[roundNumber] = {};
-            }
-            // ラウンドごとのポリゴンオブジェクトが存在しない場合、初期化
-            if (!activePolylines[roundNumber]) {
-                activePolylines[roundNumber] = {};
+                activePolylines[roundNumber] = {};  // 点線の追跡オブジェクトも初期化
             }
         
             // 該当するラウンドとアバターのマーカーが既に存在する場合、それを消して false を返す
@@ -134,9 +131,9 @@
                 delete activeMarkers[roundNumber][avatarUrl];
         
                 // 点線が存在する場合、消す
-                if (activePolylines[roundNumber]) {
-                    activePolylines[roundNumber].setMap(null);
-                    delete activePolylines[roundNumber];
+                if (activePolylines[roundNumber][avatarUrl]) {
+                    activePolylines[roundNumber][avatarUrl].setMap(null);
+                    delete activePolylines[roundNumber][avatarUrl];
                 }
         
                 return false;  // マーカーを消したので false を返す
@@ -181,18 +178,18 @@
                             repeat: '10px'  // 点線の繰り返し間隔
                         }]
                     });
-                
+        
                     // 点線を地図に追加
                     polyline.setMap(map);
-                
+        
                     // 点線を追跡
-                    activePolylines[roundNumber] = polyline;
+                    activePolylines[roundNumber][avatarUrl] = polyline;
                 }
-
         
                 return true;  // 新しいピンを追加したので true を返す
             }
         }
+
 
         
         // 概要の表示
