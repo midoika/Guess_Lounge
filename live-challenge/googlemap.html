@@ -119,8 +119,8 @@
         // ピンの追加/削除
         function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
             // ラウンドごとのマーカーオブジェクトが存在しない場合、初期化
-            if (!activeMarkers[roundNumber]) {
-                activeMarkers[roundNumber] = {};
+            if (!activeMarkers[roundNumber][avatarUrl]) {
+                activeMarkers[roundNumber][avatarUrl] = {};
             }
         
             // 該当するラウンドとアバターのマーカーが既に存在する場合、それを消して false を返す
