@@ -48,12 +48,20 @@
     <!-- リーダーボード表示エリア -->
     <div id="leaderboard">
         <h4>リーダーボード (点数クリックでゲス地点へズーム。Click scores to zoom in the places they guessed.)</h4>
+        <button id="clearMarkersBtn">ゲス地点のピンをすべて消す</button>  <!-- ボタンを追加 -->
         <div id="leaderboardEntries"></div>
     </div>
+
 
     <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-firestore.js"></script>
     <script>
+        
+        // 「ゲス地点のピンをすべて消す」ボタンのクリックイベントを設定
+        document.getElementById('clearMarkersBtn').addEventListener('click', () => {
+            removeAllMarkersAndPolylines();  // すべてのピンとポリラインを削除
+        });
+
         // Firebase 初期化
         firebase.initializeApp({
             apiKey: 'AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4',
