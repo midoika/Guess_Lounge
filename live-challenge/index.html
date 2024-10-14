@@ -216,8 +216,10 @@
             for (const roundNumber in activePolylines) {
                 if (activePolylines.hasOwnProperty(roundNumber)) {
                     for (const avatarUrl in activePolylines[roundNumber]) {
-                        if (activePolylines[roundNumber].hasOwnProperty(avatarUrl)) {
-                            activePolylines[roundNumber][avatarUrl].setMap(null);  // マーカーを地図から削除
+                        // 点線が存在する場合、消す
+                        if (activePolylines[roundNumber][avatarUrl]) {
+                            activePolylines[roundNumber][avatarUrl].setMap(null);
+                            delete activePolylines[roundNumber][avatarUrl];
                         }
                     }
                 }
