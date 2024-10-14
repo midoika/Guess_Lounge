@@ -217,7 +217,11 @@
                 if (activePolylines.hasOwnProperty(roundNumber)) {
                     for (const avatarUrl in activePolylines[roundNumber]) {
                         if (activePolylines[roundNumber].hasOwnProperty(avatarUrl)) {
-                            activePolylines[roundNumber][avatarUrl].setMap(null);  // ポリラインを地図から削除
+                            // activePolylines[roundNumber][avatarUrl].setMap(null);  // ポリラインを地図から削除
+                            if (activePolylines[roundNumber][avatarUrl]) {
+                                activePolylines[roundNumber][avatarUrl].setMap(null);
+                                delete activePolylines[roundNumber][avatarUrl];
+                            }
                         }
                     }
                 }
