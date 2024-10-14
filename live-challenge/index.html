@@ -55,11 +55,6 @@
     <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-firestore.js"></script>
     <script>
-        
-        // 「ゲス地点のピンをすべて消す」ボタンのクリックイベントを設定
-        document.getElementById('clearMarkersBtn').addEventListener('click', () => {
-            removeAllMarkersAndPolylines();  // すべてのピンとポリラインを削除
-        });
 
         // Firebase 初期化
         firebase.initializeApp({
@@ -197,30 +192,6 @@
             }
         }
 
-        function removeAllMarkersAndPolylines() {
-            // activeMarkers の全マーカーを削除
-            for (const roundNumber in activeMarkers) {
-                for (const avatarUrl in activeMarkers[roundNumber]) {
-                    if (activeMarkers[roundNumber].hasOwnProperty(avatarUrl)) {
-                        activeMarkers[roundNumber][avatarUrl].setMap(null);  // マーカーを地図から削除
-                    }
-                }
-            }
-            // activeMarkers のオブジェクトをリセット
-            activeMarkers = {};
-        
-            // activePolylines の全ポリラインを削除
-            for (const roundNumber in activePolylines) {
-                for (const avatarUrl in activePolylines[roundNumber]) {
-                    // 点線が存在する場合、消す
-                    if (activePolylines[roundNumber].hasOwnProperty(avatarUrl)) {
-                        activePolylines[roundNumber][avatarUrl].setMap(null);  // マーカーを地図から削除
-                    }
-                }
-            }
-            // activePolylines のオブジェクトをリセット
-            activePolylines = {};
-        }
 
         
         // 概要の表示
