@@ -190,6 +190,33 @@
             }
         }
 
+        function removeAllMarkersAndPolylines() {
+            // activeMarkers の全マーカーを削除
+            for (const roundNumber in activeMarkers) {
+                if (activeMarkers.hasOwnProperty(roundNumber)) {
+                    for (const avatarUrl in activeMarkers[roundNumber]) {
+                        if (activeMarkers[roundNumber].hasOwnProperty(avatarUrl)) {
+                            activeMarkers[roundNumber][avatarUrl].setMap(null);  // マーカーを地図から削除
+                        }
+                    }
+                }
+            }
+            // activeMarkers のオブジェクトをリセット
+            activeMarkers = {};
+        
+            // activePolylines の全ポリラインを削除
+            for (const roundNumber in activePolylines) {
+                if (activePolylines.hasOwnProperty(roundNumber)) {
+                    for (const avatarUrl in activePolylines[roundNumber]) {
+                        if (activePolylines[roundNumber].hasOwnProperty(avatarUrl)) {
+                            activePolylines[roundNumber][avatarUrl].setMap(null);  // ポリラインを地図から削除
+                        }
+                    }
+                }
+            }
+            // activePolylines のオブジェクトをリセット
+            activePolylines = {};
+        }
 
         
         // 概要の表示
