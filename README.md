@@ -1,10 +1,8 @@
 # Guess_Lounge
 - シーズン0のリザルト[https://midoika.github.io/Guess_Lounge/archive/season_0/docs/html/index.html](https://midoika.github.io/Guess_Lounge/archive/season_0/docs/html/index.html)
 - プロフィールURLの登録方法 [https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url/how_to_register_your_profile_url](https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url/how_to_register_your_profile_url)
+
 # 🇯🇵
-
-# 1. 登録・退会など
-
 ## 登録 (@マルチ募集、@Guess Lounge Player 、モデレーター)
 ###  #⑥-✅参加登録 で登録して下さい。ただし名前は`_`と`.`が消えます。
 - 登録後、 @Guess Lounge Player  が自動付与されます。
@@ -36,23 +34,21 @@
 ```
 
 # 3. 試合登録 (@Guess Lounge Player 、モデレーター)
-## `/duel` (1 on 1 Duels)
-- **winner **に勝者
-- **loser**に敗者
-- **types**に `move`,`nm`,`nmpz`のどれかを入れて下さい。
-- 最後に証拠urlを貼って、提出。(3つまで)（必須）
+## `/duelurl` (1 on 1 Duels)
+- 試合結果のurlを貼り付けると自動に勝敗判定してくれます。
+  - アプリの方はPC勢の方に、かわりに入力してもらって下さい。
 - ミスがあれば、`/nogame`コマンドをお使いください。メッセージ削除はデータに反映されません！
-- `/duel`コマンドを使う前に、両者の GeoGuessr Profile URLが必要です。 @yohe#6047 に `$profileurl`で登録して下さい
-https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url/how_to_register_your_profile_url
+- **`/duelurl`コマンドを使う前に、両者の GeoGuessr Profile URLが必要** です。 @yohe#6047 に `$profileurl`で登録して下さい。
+https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url
 ```
 $profileurl https://www.geoguessr.com/user/~
-/duel hoge midoika nm https://www.geoguessr.com/results/OTBuTnHfJoR1qSOD
+/duelurl https://www.geoguessr.com/results/OTBuTnHfJoR1qSOD
 ```
 
 ## `/nogame`(ノーゲームにする)
 - 間違って結果を登録した際に無効にするコマンド
-- **無効試合後にしたい試合がある場合、無効にするまで、双方ともが次の試合をしてはいけない**
-  - ※無効にしたい試合と違うルールのは行える(無効がMoving なら、No Moveは引き続きできる)
+- **無効試合後にしたい試合がある場合、無効にするまで、双方ともが次の試合をしてはいけません。**
+  - ※無効にしたい試合と違うルールのは行えます。(無効がMoving なら、No Moveは引き続きできる)
 - **types**に `move`,`nm`,`nmpz`のどれかを入れて下さい。
 ```
 /nogame midoika hoge move
@@ -92,16 +88,14 @@ $profileurl https://www.geoguessr.com/user/~
 /stats hoge
 ```
 # 3. Match Registration ( @Guess Lounge Player, moderator)
-## `/duel` 1 on 1 Duels
-- **types**is `move`,`nm`,or `nmpz`.
-- Pasting a URL link as proof is mandatory.(~3 urls)
-- If you found typo, use `/nogame`. (deleting message is illegal)
+## `/duelurl` 
+- Input game breakdown URLs and judge win & loss automatically.
 - Both of GeoGuessr profile URL are required.
-https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url/how_to_register_your_profile_url
+https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url
 
 ```
 $profileurl https://www.geoguessr.com/user/~
-/duel hoge midoika nm https://www.geoguessr.com/results/aaa
+/duelurl https://www.geoguessr.com/results/aaa
 ```
 
 ## `/nogame`Make the last game a no-game. 
