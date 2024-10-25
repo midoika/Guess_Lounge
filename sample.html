@@ -41,7 +41,7 @@
                 if (currentDoc.exists()) {
                     const data = currentDoc.data();
                     if (data.token) {
-                        document.getElementById('current-token').innerHTML = `本日(${currentDate})のデイリーチャレンジ: <a href="https://www.geoguessr.com/challenge/${data.token}" target="_blank">${data.token}</a>`;
+                        document.getElementById('current-token').innerHTML = `<a href="https://www.geoguessr.com/challenge/${data.token}" target="_blank">本日(${currentDate})のデイリーチャレンジ</a>`;
                     }
                 } else {
                     document.getElementById('current-token').innerText = "Today's document does not exist.";
