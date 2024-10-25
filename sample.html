@@ -4,34 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Firestore Data Display</title>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        .item {
-            margin: 10px 0;
-        }
-    </style>
-</head>
-<body>
-    <h1>Firestore Data Display</h1>
-    <div id="current-token"></div>
-    <div id="yesterday-items"></div>
+    <script type="module">
+        // Firebase SDKをインポート
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
 
-    <script>
+        // Firebaseの設定
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+          apiKey: "AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4",
+          authDomain: "mido-96308.firebaseapp.com",
+          projectId: "mido-96308",
+          storageBucket: "mido-96308.appspot.com",
+          messagingSenderId: "574980077608",
+          appId: "1:574980077608:web:5065ea7bd43efaea31dd1d"
         };
+        
 
-        const app = firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        // Firebase初期化
+        const app = initializeApp(firebaseConfig);
+        
+        const db = getFirestore(app);
 
         async function displayData() {
             try {
@@ -43,10 +35,10 @@
                 const yesterdayDate = yesterday.toLocaleDateString('ja-JP', options).replace(/\//g, '-');
 
                 // 今日のドキュメントを取得
-                const currentDocRef = db.collection('daily_challenge').doc(currentDate);
-                const currentDoc = await currentDocRef.get();
+                const currentDocRef = doc(db, 'daily_challenge', currentDate);
+                const currentDoc = await getDoc(currentDocRef);
 
-                if (currentDoc.exists) {
+                if (currentDoc.exists()) {
                     const data = currentDoc.data();
                     if (data.token) {
                         document.getElementById('current-token').innerText = `Today's Token: ${data.token}`;
@@ -56,10 +48,10 @@
                 }
 
                 // 昨日のドキュメントを取得
-                const yesterdayDocRef = db.collection('daily_challenge').doc(yesterdayDate);
-                const yesterdayDoc = await yesterdayDocRef.get();
+                const yesterdayDocRef = doc(db, 'daily_challenge', yesterdayDate);
+                const yesterdayDoc = await getDoc(yesterdayDocRef);
 
-                if (yesterdayDoc.exists) {
+                if (yesterdayDoc.exists()) {
                     const yesterdayData = yesterdayDoc.data();
                     const items = yesterdayData.item.filter(item => item.totalScore > 0);
 
@@ -79,7 +71,21 @@
             }
         }
 
+        // データを表示
         displayData();
     </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .item {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Firestore Data Display</h1>
+    <div id="current-token"></div>
+    <div id="yesterday-items"></div>
 </body>
 </html>
