@@ -56,17 +56,17 @@
                     if (yesterdayData.items) {  // itemsフィールドが存在するか確認
                         const items = yesterdayData.items.filter(item => item.totalScore > 0).slice(0, 10); // 10人まで表示
 
-                        let itemsHtml = "<h2>昨日(${yesterdayDate})のトップ10:</h2>";
+                        let itemsHtml = `<h2>昨日 (${yesterdayDate}) のトップ10:</h2>`;
                         items.forEach((item, index) => {
                             itemsHtml += `<div class="item">${index + 1}位: <a href="https://www.geoguessr.com/user/${item.userId}" target="_blank">${item.playerName}</a> - Total Score: ${item.totalScore}</div>`;
                         });
 
                         document.getElementById('yesterday-items').innerHTML = itemsHtml;
                     } else {
-                        document.getElementById('yesterday-items').innerText = "Yesterday's items data does not exist.";
+                        document.getElementById('yesterday-items').innerText = `昨日 (${yesterdayDate}) のトップ10: データが存在しません。`;
                     }
                 } else {
-                    document.getElementById('yesterday-items').innerText = "Yesterday's document does not exist.";
+                    document.getElementById('yesterday-items').innerText = `昨日 (${yesterdayDate}) のトップ10: ドキュメントが存在しません。`;
                 }
             } catch (error) {
                 console.error("Error fetching Firestore data:", error);
