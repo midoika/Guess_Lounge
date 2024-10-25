@@ -21,55 +21,65 @@
     <div id="yesterday-items"></div>
 
     <script>
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
-
-        // Firebase初期化
-        firebase.initializeApp({
-            apiKey: 'AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4',
-            projectId: 'mido-96308',
-        });
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
         async function displayData() {
-            const today = new Date();
-            const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Tokyo' };
-            const currentDate = today.toLocaleDateString('ja-JP', options).replace(/\//g, '-');
-            const yesterday = new Date(today);
-            yesterday.setDate(today.getDate() - 1);
-            const yesterdayDate = yesterday.toLocaleDateString('ja-JP', options).replace(/\//g, '-');
+            try {
+                const today = new Date();
+                const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Tokyo' };
+                const currentDate = today.toLocaleDateString('ja-JP', options).replace(/\//g, '-');
+                const yesterday = new Date(today);
+                yesterday.setDate(today.getDate() - 1);
+                const yesterdayDate = yesterday.toLocaleDateString('ja-JP', options).replace(/\//g, '-');
 
-            // 今日のドキュメントを取得
-            const currentDocRef = db.collection('daily_challenge').doc(currentDate);
-            const currentDoc = await currentDocRef.get();
+                // 今日のドキュメントを取得
+                const currentDocRef = db.collection('daily_challenge').doc(currentDate);
+                const currentDoc = await currentDocRef.get();
 
-            if (currentDoc.exists) {
-                const data = currentDoc.data();
-                if (data.token) {
-                    document.getElementById('current-token').innerText = `Today's Token: ${data.token}`;
+                if (currentDoc.exists) {
+                    const data = currentDoc.data();
+                    if (data.token) {
+                        document.getElementById('current-token').innerText = `Today's Token: ${data.token}`;
+                    }
+                } else {
+                    document.getElementById('current-token').innerText = "Today's document does not exist.";
                 }
-            } else {
-                document.getElementById('current-token').innerText = "Today's document does not exist.";
-            }
 
-            // 昨日のドキュメントを取得
-            const yesterdayDocRef = db.collection('daily_challenge').doc(yesterdayDate);
-            const yesterdayDoc = await yesterdayDocRef.get();
+                // 昨日のドキュメントを取得
+                const yesterdayDocRef = db.collection('daily_challenge').doc(yesterdayDate);
+                const yesterdayDoc = await yesterdayDocRef.get();
 
-            if (yesterdayDoc.exists) {
-                const yesterdayData = yesterdayDoc.data();
-                const items = yesterdayData.item.filter(item => item.totalScore > 0);
+                if (yesterdayDoc.exists) {
+                    const yesterdayData = yesterdayDoc.data();
+                    const items = yesterdayData.item.filter(item => item.totalScore > 0);
 
-                let itemsHtml = "<h2>Yesterday's Items:</h2>";
-                items.forEach(item => {
-                    itemsHtml += `<div class="item">Player: ${item.playerName}, User ID: ${item.userId}, Total Score: ${item.totalScore}</div>`;
-                });
+                    let itemsHtml = "<h2>Yesterday's Items:</h2>";
+                    items.forEach(item => {
+                        itemsHtml += `<div class="item">Player: ${item.playerName}, User ID: ${item.userId}, Total Score: ${item.totalScore}</div>`;
+                    });
 
-                document.getElementById('yesterday-items').innerHTML = itemsHtml;
-            } else {
-                document.getElementById('yesterday-items').innerText = "Yesterday's document does not exist.";
+                    document.getElementById('yesterday-items').innerHTML = itemsHtml;
+                } else {
+                    document.getElementById('yesterday-items').innerText = "Yesterday's document does not exist.";
+                }
+            } catch (error) {
+                console.error("Error fetching Firestore data:", error);
+                document.getElementById('current-token').innerText = "データ取得中にエラーが発生しました。";
+                document.getElementById('yesterday-items').innerText = "データ取得中にエラーが発生しました。";
             }
         }
 
-        displayData().catch(console.error);
+        displayData();
     </script>
 </body>
 </html>
