@@ -54,11 +54,11 @@
                 if (yesterdayDoc.exists()) {
                     const yesterdayData = yesterdayDoc.data();
                     if (yesterdayData.items) {  // itemsフィールドが存在するか確認
-                        const items = yesterdayData.item.filter(items => items.totalScore > 0);
+                        const items = yesterdayData.items.filter(item => item.totalScore > 0);
 
                         let itemsHtml = "<h2>Yesterday's Items:</h2>";
-                        items.forEach(items => {
-                            itemsHtml += `<div class="items">Player: ${items.playerName}, User ID: ${items.userId}, Total Score: ${items.totalScore}</div>`;
+                        items.forEach(item => {
+                            itemsHtml += `<div class="item">Player: ${item.playerName}, User ID: ${item.userId}, Total Score: ${item.totalScore}</div>`;
                         });
 
                         document.getElementById('yesterday-items').innerHTML = itemsHtml;
@@ -82,7 +82,7 @@
         body {
             font-family: Arial, sans-serif;
         }
-        .items {
+        .item {
             margin: 10px 0;
         }
     </style>
