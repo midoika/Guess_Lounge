@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firestore Data Display</title>
+    <title>日本マップデイリーチャレンジ</title>
     <script type="module">
         // Firebase SDKをインポート
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
@@ -41,7 +41,7 @@
                 if (currentDoc.exists()) {
                     const data = currentDoc.data();
                     if (data.token) {
-                        document.getElementById('current-token').innerHTML = `Today's Token: <a href="https://www.geoguessr.com/challenge/${data.token}" target="_blank">${data.token}</a>`;
+                        document.getElementById('current-token').innerHTML = `本日(${currentDate})のデイリーチャレンジ: <a href="https://www.geoguessr.com/challenge/${data.token}" target="_blank">${data.token}</a>`;
                     }
                 } else {
                     document.getElementById('current-token').innerText = "Today's document does not exist.";
@@ -56,7 +56,7 @@
                     if (yesterdayData.items) {  // itemsフィールドが存在するか確認
                         const items = yesterdayData.items.filter(item => item.totalScore > 0).slice(0, 10); // 10人まで表示
 
-                        let itemsHtml = "<h2>Yesterday's Items:</h2>";
+                        let itemsHtml = "<h2>昨日(${yesterdayDate})のトップ10:</h2>";
                         items.forEach((item, index) => {
                             itemsHtml += `<div class="item">${index + 1}位: <a href="https://www.geoguessr.com/user/${item.userId}" target="_blank">${item.playerName}</a> - Total Score: ${item.totalScore}</div>`;
                         });
@@ -88,7 +88,9 @@
     </style>
 </head>
 <body>
-    <h1>Firestore Data Display</h1>
+    <h1>日本マップデイリーチャレンジ</h1>
+    日本マップ限定のデイリーチャレンジです。<br>
+    Mon-Wed-Fri=Moving Tue-Thu-Sat=NM, Sun=NMPZ<br>
     <div id="current-token"></div>
     <div id="yesterday-items"></div>
 </body>
