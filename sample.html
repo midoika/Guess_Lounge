@@ -41,7 +41,7 @@
                 if (currentDoc.exists()) {
                     const data = currentDoc.data();
                     if (data.token) {
-                        document.getElementById('current-token').innerText = `Today's Token: ${data.token}`;
+                        document.getElementById('current-token').innerHTML = `Today's Token: <a href="https://www.geoguessr.com/challenge/${data.token}" target="_blank">${data.token}</a>`;
                     }
                 } else {
                     document.getElementById('current-token').innerText = "Today's document does not exist.";
@@ -54,11 +54,11 @@
                 if (yesterdayDoc.exists()) {
                     const yesterdayData = yesterdayDoc.data();
                     if (yesterdayData.items) {  // itemsフィールドが存在するか確認
-                        const items = yesterdayData.items.filter(item => item.totalScore > 0);
+                        const items = yesterdayData.items.filter(item => item.totalScore > 0).slice(0, 10); // 10人まで表示
 
                         let itemsHtml = "<h2>Yesterday's Items:</h2>";
-                        items.forEach(item => {
-                            itemsHtml += `<div class="item">Player: ${item.playerName}, User ID: ${item.userId}, Total Score: ${item.totalScore}</div>`;
+                        items.forEach((item, index) => {
+                            itemsHtml += `<div class="item">${index + 1}位: <a href="https://www.geoguessr.com/user/${item.userId}" target="_blank">${item.playerName}</a> - Total Score: ${item.totalScore}</div>`;
                         });
 
                         document.getElementById('yesterday-items').innerHTML = itemsHtml;
