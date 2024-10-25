@@ -53,17 +53,17 @@
 
                 if (yesterdayDoc.exists()) {
                     const yesterdayData = yesterdayDoc.data();
-                    if (yesterdayData.item) {  // itemフィールドが存在するか確認
-                        const items = yesterdayData.item.filter(item => item.totalScore > 0);
+                    if (yesterdayData.items) {  // itemsフィールドが存在するか確認
+                        const items = yesterdayData.item.filter(items => items.totalScore > 0);
 
                         let itemsHtml = "<h2>Yesterday's Items:</h2>";
-                        items.forEach(item => {
-                            itemsHtml += `<div class="item">Player: ${item.playerName}, User ID: ${item.userId}, Total Score: ${item.totalScore}</div>`;
+                        items.forEach(items => {
+                            itemsHtml += `<div class="items">Player: ${items.playerName}, User ID: ${items.userId}, Total Score: ${items.totalScore}</div>`;
                         });
 
                         document.getElementById('yesterday-items').innerHTML = itemsHtml;
                     } else {
-                        document.getElementById('yesterday-items').innerText = "Yesterday's item data does not exist.";
+                        document.getElementById('yesterday-items').innerText = "Yesterday's items data does not exist.";
                     }
                 } else {
                     document.getElementById('yesterday-items').innerText = "Yesterday's document does not exist.";
@@ -82,7 +82,7 @@
         body {
             font-family: Arial, sans-serif;
         }
-        .item {
+        .items {
             margin: 10px 0;
         }
     </style>
