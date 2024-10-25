@@ -1,53 +1,75 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firestore Document Reference</title>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firestore Data Display</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .item {
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
-  <h1>Firestore Document Data</h1>
-  <div id="documentData"></div>
+    <h1>Firestore Data Display</h1>
+    <div id="current-token"></div>
+    <div id="yesterday-items"></div>
 
-  <script>
-    // Firebase設定
-    const firebaseConfig = {
-      apiKey: "AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4",
-      authDomain: "mido-96308.firebaseapp.com",
-      projectId: "mido-96308",
-      storageBucket: "mido-96308.appspot.com",
-      messagingSenderId: "574980077608",
-      appId: "1:574980077608:web:5065ea7bd43efaea31dd1d"
-    };
+    <script>
 
-    // Firebase初期化
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
 
-    // URLのクエリパラメータからcollectionとdocumentを取得
-    const params = new URLSearchParams(window.location.search);
-    const collectionName = params.get('collection');
-    const documentId = params.get('document');
+        // Firebase初期化
+        firebase.initializeApp({
+            apiKey: 'AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4',
+            projectId: 'mido-96308',
+        });
 
-    if (collectionName && documentId) {
-      // Firestoreで指定されたコレクションとドキュメントを参照
-      db.collection(collectionName).doc(documentId).get().then((doc) => {
-        if (doc.exists) {
-          // ドキュメントデータを表示
-          document.getElementById('documentData').innerHTML = `<pre>${JSON.stringify(doc.data(), null, 2)}</pre>`;
-        } else {
-          document.getElementById('documentData').textContent = 'No such document!';
+        async function displayData() {
+            const today = new Date();
+            const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'Asia/Tokyo' };
+            const currentDate = today.toLocaleDateString('ja-JP', options).replace(/\//g, '-');
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1);
+            const yesterdayDate = yesterday.toLocaleDateString('ja-JP', options).replace(/\//g, '-');
+
+            // 今日のドキュメントを取得
+            const currentDocRef = db.collection('daily_challenge').doc(currentDate);
+            const currentDoc = await currentDocRef.get();
+
+            if (currentDoc.exists) {
+                const data = currentDoc.data();
+                if (data.token) {
+                    document.getElementById('current-token').innerText = `Today's Token: ${data.token}`;
+                }
+            } else {
+                document.getElementById('current-token').innerText = "Today's document does not exist.";
+            }
+
+            // 昨日のドキュメントを取得
+            const yesterdayDocRef = db.collection('daily_challenge').doc(yesterdayDate);
+            const yesterdayDoc = await yesterdayDocRef.get();
+
+            if (yesterdayDoc.exists) {
+                const yesterdayData = yesterdayDoc.data();
+                const items = yesterdayData.item.filter(item => item.totalScore > 0);
+
+                let itemsHtml = "<h2>Yesterday's Items:</h2>";
+                items.forEach(item => {
+                    itemsHtml += `<div class="item">Player: ${item.playerName}, User ID: ${item.userId}, Total Score: ${item.totalScore}</div>`;
+                });
+
+                document.getElementById('yesterday-items').innerHTML = itemsHtml;
+            } else {
+                document.getElementById('yesterday-items').innerText = "Yesterday's document does not exist.";
+            }
         }
-      }).catch((error) => {
-        console.error("Error getting document: ", error);
-        document.getElementById('documentData').textContent = 'Error getting document.';
-      });
-    } else {
-      document.getElementById('documentData').textContent = 'No collection or document specified in the URL.';
-    }
-  </script>
+
+        displayData().catch(console.error);
+    </script>
 </body>
 </html>
