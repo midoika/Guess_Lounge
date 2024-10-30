@@ -30,11 +30,11 @@
 
   <script>
     // Firebase initialization
-    const firebaseConfig = {
-      // Your Firebase config here
-    };
-    const app = firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore(app);
+    firebase.initializeApp({
+	      apiKey: 'AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4',
+        projectId: 'mido-96308',
+    });
+    const db = firebase.firestore();
 
     // Retrieve document ID from URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -72,7 +72,9 @@
     function createTable(elementId, data, title) {
       let winCount = data.filter(item => item.result === "win").length;
       let lossCount = data.filter(item => item.result === "loss").length;
-      let html = `<h2>${title}</h2><table><tr><th>Opponent</th><th>Result</th><th>Score</th><th>URL</th></tr>`;
+      let html = `<h2>${title}</h2><p>Win: ${winCount}, Loss: ${lossCount}</p>`;
+      html += `<table><tr><th>Opponent</th><th>Result</th><th>Score</th><th>URL</th></tr>`;
+
       data.forEach(item => {
         // URLが `http://example.com/` 以外の場合にのみリンクを生成
         let urls = (item.url || []).map(url => url !== "http://example.com/" ? `<a href="${url}" target="_blank">Link</a>` : "").join(", ");
