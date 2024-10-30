@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>GeoGuessr 戦績表示</title>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-firestore.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -70,8 +70,8 @@
 
     // Function to create tables
     function createTable(elementId, data, title) {
-      // let winCount = data.filter(item => item.result === "win").length;
-      // let lossCount = data.filter(item => item.result === "loss").length;
+      let winCount = data.filter(item => item.result === "win").length;
+      let lossCount = data.filter(item => item.result === "loss").length;
       let html = `<h2>${title}</h2><table><tr><th>Opponent</th><th>Result</th><th>Score</th><th>URL</th></tr>`;
       data.forEach(item => {
         // URLが `http://example.com/` 以外の場合にのみリンクを生成
