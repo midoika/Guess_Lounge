@@ -15,27 +15,30 @@
 </head>
 <body>
   <h1 id="name"></h1>
-  <div id="matches-table"></div>
-  <div id="nm-table"></div>
-  <div id="nmpz-table"></div>
+
+  <!-- グラフ表示領域 -->
   <div class="chart-container">
     <canvas id="matchesChart"></canvas>
   </div>
+  <div id="matches-table"></div>
+  
   <div class="chart-container">
     <canvas id="nmChart"></canvas>
   </div>
+  <div id="nm-table"></div>
+  
   <div class="chart-container">
     <canvas id="nmpzChart"></canvas>
   </div>
+  <div id="nmpz-table"></div>
 
   <script>
     // Firebase initialization
-        // Firebase 初期化
-    firebase.initializeApp({
-	apiKey: 'AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4',
-        projectId: 'mido-96308',
-    });
-    const db = firebase.firestore();
+    const firebaseConfig = {
+      // Your Firebase config here
+    };
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
 
     // Retrieve document ID from URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -49,15 +52,15 @@
           // Set name with profile link
           document.getElementById("name").innerHTML = `<a href="${data.geoguessr_profile_url}" target="_blank">${data.name}</a>`;
 
-          // Render tables for each category
-          createTable("matches-table", data.matches, "Matches");
-          createTable("nm-table", data.nm, "NM");
-          createTable("nmpz-table", data.nmpz, "NMPZ");
-
           // Render line charts
-          createLineChart("matchesChart", data.matches, "Matches Score Change");
+          createLineChart("matchesChart", data.matches, "Move Score Change");
           createLineChart("nmChart", data.nm, "NM Score Change");
           createLineChart("nmpzChart", data.nmpz, "NMPZ Score Change");
+
+          // Render tables for each category with win/loss counts
+          createTable("matches-table", data.matches, "Move");
+          createTable("nm-table", data.nm, "NM");
+          createTable("nmpz-table", data.nmpz, "NMPZ");
 
         } else {
           alert("Document not found!");
@@ -69,18 +72,22 @@
       alert("No document ID specified in URL.");
     }
 
-    // Function to create tables
+    // Function to create tables with win/loss counts
     function createTable(elementId, data, title) {
-      let html = `<h2>${title}</h2><table><tr><th>Opponent</th><th>Result</th><th>Score</th><th>URL</th></tr>`;
+      // Calculate win/loss counts
+      let winCount = data.filter(item => item.result === "win").length;
+      let lossCount = data.filter(item => item.result === "loss").length;
+
+      let html = `<h2>${title}</h2><p>Win: ${winCount}, Loss: ${lossCount}</p>`;
+      html += `<table><tr><th>Opponent</th><th>Result</th><th>Score</th><th>URL</th></tr>`;
       data.forEach(item => {
-        // URLが存在する場合のみリンクを生成
-        let urls = (item.url || []).map(url => url ? `<a href="${url}" target="_blank">Link</a>` : "").join(", ");
+        // URLが `http://example.com/` 以外の場合にのみリンクを生成
+        let urls = (item.url || []).map(url => url !== "http://example.com/" ? `<a href="${url}" target="_blank">Link</a>` : "").join(", ");
         html += `<tr><td>${item.opponent}</td><td>${item.result}</td><td>${item.score}</td><td>${urls}</td></tr>`;
       });
       html += "</table>";
       document.getElementById(elementId).innerHTML = html;
     }
-
 
     // Function to create line charts for score change
     function createLineChart(elementId, data, label) {
