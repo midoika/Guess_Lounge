@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>GeoGuessr 戦績表示</title>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f4f4f4; }
+    .chart-container { width: 100%; max-width: 600px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1 id="name"></h1>
+  <div id="matches-table"></div>
+  <div id="nm-table"></div>
+  <div id="nmpz-table"></div>
+  <div class="chart-container">
+    <canvas id="matchesChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <canvas id="nmChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <canvas id="nmpzChart"></canvas>
+  </div>
+
+  <script>
+    // Firebase initialization
+    const firebaseConfig = {
+	  apiKey: "AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4",
+	  authDomain: "mido-96308.firebaseapp.com",
+	  projectId: "mido-96308",
+	  storageBucket: "mido-96308.appspot.com",
+	  messagingSenderId: "574980077608",
+	  appId: "1:574980077608:web:5065ea7bd43efaea31dd1d"
+
+    };
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(app);
+
+    // Retrieve document ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const docId = urlParams.get('id'); // Use ?id=documentId in URL
+
+    if (docId) {
+      db.collection("matches_season_2").doc(docId).get().then((doc) => {
+        if (doc.exists) {
+          const data = doc.data();
+
+          // Set name with profile link
+          document.getElementById("name").innerHTML = `<a href="${data.geoguessr_profile_url}" target="_blank">${data.name}</a>`;
+
+          // Render tables for each category
+          createTable("matches-table", data.matches, "Matches");
+          createTable("nm-table", data.nm, "NM");
+          createTable("nmpz-table", data.nmpz, "NMPZ");
+
+          // Render line charts
+          createLineChart("matchesChart", data.matches, "Matches Score Change");
+          createLineChart("nmChart", data.nm, "NM Score Change");
+          createLineChart("nmpzChart", data.nmpz, "NMPZ Score Change");
+
+        } else {
+          alert("Document not found!");
+        }
+      }).catch((error) => {
+        console.error("Error fetching document: ", error);
+      });
+    } else {
+      alert("No document ID specified in URL.");
+    }
+
+    // Function to create tables
+    function createTable(elementId, data, title) {
+      let html = `<h2>${title}</h2><table><tr><th>Opponent</th><th>Result</th><th>Score</th><th>URL</th></tr>`;
+      data.forEach(item => {
+        let urls = (item.url || []).map(url => `<a href="${url}" target="_blank">Link</a>`).join(", ");
+        html += `<tr><td>${item.opponent}</td><td>${item.result}</td><td>${item.score}</td><td>${urls}</td></tr>`;
+      });
+      html += "</table>";
+      document.getElementById(elementId).innerHTML = html;
+    }
+
+    // Function to create line charts for score change
+    function createLineChart(elementId, data, label) {
+      const scores = data.map(item => item.score);
+      const labels = data.map((_, index) => `Match ${index + 1}`);
+
+      new Chart(document.getElementById(elementId), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: label,
+            data: scores,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 2,
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: true },
+            tooltip: { mode: 'index', intersect: false }
+          },
+          scales: {
+            x: { display: true, title: { display: true, text: 'Match Number' } },
+            y: { display: true, title: { display: true, text: 'Score' } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
