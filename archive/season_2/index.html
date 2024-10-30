@@ -49,12 +49,12 @@
           document.getElementById("name").innerHTML = `<a href="${data.geoguessr_profile_url}" target="_blank">${data.name}</a>`;
 
           // Render tables for each category
-          createTable("matches-table", data.matches, "Matches");
+          createTable("matches-table", data.matches, "Move");
           createTable("nm-table", data.nm, "NM");
           createTable("nmpz-table", data.nmpz, "NMPZ");
 
           // Render line charts
-          createLineChart("matchesChart", data.matches, "Matches Score Change");
+          createLineChart("matchesChart", data.matches, "Move Score Chang");
           createLineChart("nmChart", data.nm, "NM Score Change");
           createLineChart("nmpzChart", data.nmpz, "NMPZ Score Change");
 
