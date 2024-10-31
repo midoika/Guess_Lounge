@@ -70,19 +70,29 @@
 
     // Function to create tables
     function createTable(elementId, data, title) {
-      let winCount = data.filter(item => item.result === "win").length;
-      let lossCount = data.filter(item => item.result === "loss").length;
-      let html = `<h2>${title}</h2><p>Win: ${winCount}, Loss: ${lossCount}</p>`;
+      // Calculate win/loss counts and win percentage
+      const winCount = data.filter(item => item.result === "win").length;
+      const lossCount = data.filter(item => item.result === "loss").length;
+      const winPercentage = ((winCount / data.length) * 100).toFixed(1); // 勝率計算（小数点1位）
+
+      // テーブルの先頭に勝率と勝敗数を表示
+      let html = `<h2>${title}</h2><p>Win Rate: ${winPercentage}% | Win: ${winCount}, Loss: ${lossCount}</p>`;
       html += `<table><tr><th>Opponent</th><th>Result</th><th>Score</th><th>URL</th></tr>`;
 
       data.forEach(item => {
-        // URLが `http://example.com/` 以外の場合にのみリンクを生成
-        let urls = (item.url || []).map(url => url !== "http://example.com/" ? `<a href="${url}" target="_blank">Link</a>` : "").join(", ");
+        // URLが `http://example.com/` の場合は非表示
+        const urls = (item.url || [])
+          .filter(url => url !== "http://example.com")
+          .map(url => `<a href="${url}" target="_blank">Link</a>`)
+          .join(", ");
+
         html += `<tr><td>${item.opponent}</td><td>${item.result}</td><td>${item.score}</td><td>${urls}</td></tr>`;
       });
+
       html += "</table>";
       document.getElementById(elementId).innerHTML = html;
     }
+
 
 
     // Function to create line charts for score change
