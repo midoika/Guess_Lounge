@@ -73,7 +73,7 @@
       // Calculate win/loss counts and win percentage
       const winCount = data.filter(item => item.result === "win").length;
       const lossCount = data.filter(item => item.result === "loss").length;
-      const winPercentage = ((winCount / data.length) * 100).toFixed(1); // 勝率計算（小数点1位）
+      const winPercentage = ((winCount / data.length -1) * 100).toFixed(1); // 勝率計算（小数点1位）
 
       // テーブルの先頭に勝率と勝敗数を表示
       let html = `<h2>${title}</h2><p>Win Rate: ${winPercentage}% | Win: ${winCount}, Loss: ${lossCount}</p>`;
