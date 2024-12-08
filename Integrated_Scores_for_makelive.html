@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スコア統合ツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        .input-area {
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+        }
+        button {
+            margin-top: 10px;
+        }
+        #output {
+            background-color: #f4f4f4;
+            padding: 10px;
+            white-space: pre-wrap;
+            border: 1px solid #ccc;
+            width: 100%;
+            height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>スコア統合ツール</h1>
+    <p>スコア表を追加し、名前ごとのスコアを統合します。</p>
+
+    <div id="inputContainer">
+        <div class="input-area">
+            <label for="input1">スコア表1:</label>
+            <textarea id="input1"></textarea>
+        </div>
+        <div class="input-area">
+            <label for="input2">スコア表2:</label>
+            <textarea id="input2"></textarea>
+        </div>
+    </div>
+    <button onclick="addScoreInput()">[スコア表を更に追加する]</button>
+    <button onclick="mergeScores()">統合</button>
+    <button onclick="copyOutput()">コピー</button>
+
+    <h2>結果:</h2>
+    <textarea id="output" readonly></textarea>
+
+    <script>
+        let scoreTableCount = 2; // 初期スコア表の数
+
+        // スコア表を追加する
+        function addScoreInput() {
+            scoreTableCount++;
+            const container = document.getElementById("inputContainer");
+            const newInputArea = document.createElement("div");
+            newInputArea.className = "input-area";
+            newInputArea.innerHTML = `
+                <label for="input${scoreTableCount}">スコア表${scoreTableCount}:</label>
+                <textarea id="input${scoreTableCount}"></textarea>
+            `;
+            container.appendChild(newInputArea);
+        }
+
+        // スコアをパースする
+        function parseScores(input) {
+            const lines = input.trim().split("\n");
+            const result = {};
+            lines.slice(1).forEach(line => {
+                const [position, name, totalScore] = line.split(",");
+                if (name) {
+                    result[name] = parseInt(totalScore, 10) || 0;
+                }
+            });
+            return result;
+        }
+
+        // スコアを統合する
+        function mergeScores() {
+            const mergedScores = {};
+            for (let i = 1; i <= scoreTableCount; i++) {
+                const input = document.getElementById(`input${i}`).value;
+                if (input.trim()) {
+                    const scores = parseScores(input);
+                    for (const [name, score] of Object.entries(scores)) {
+                        if (!mergedScores[name]) {
+                            mergedScores[name] = Array(scoreTableCount).fill(0);
+                        }
+                        mergedScores[name][i - 1] = score;
+                    }
+                }
+            }
+
+            const mergedList = [];
+            for (const [name, scores] of Object.entries(mergedScores)) {
+                const totalScore = scores.reduce((a, b) => a + b, 0);
+                mergedList.push({ name, scores, totalScore });
+            }
+            mergedList.sort((a, b) => b.totalScore - a.totalScore);
+
+            // 結果を表示
+            let output = "Name," + Array.from({ length: scoreTableCount }, (_, i) => `Score ${i + 1}`).join(",") + ",Total Score\n";
+            mergedList.forEach(({ name, scores, totalScore }) => {
+                output += `${name},${scores.join(",")},${totalScore}\n`;
+            });
+
+            document.getElementById("output").value = output.trim();
+        }
+
+        // 結果をコピーする
+        function copyOutput() {
+            const output = document.getElementById("output");
+            output.select();
+            document.execCommand("copy");
+            alert("結果をコピーしました！");
+        }
+    </script>
+</body>
+</html>
+
