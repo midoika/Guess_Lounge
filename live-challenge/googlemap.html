@@ -253,16 +253,34 @@ function displayLeaderboard(entries) {
         nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;  // entry.idをURLとして使用
         nameLink.textContent = entry.name;
         nameLink.className = 'name-link'; // 必要に応じてクラスを追加
-        nameLink.addEventListener('click', (event) => {
-            event.preventDefault(); // デフォルトのリンク動作を無効化
+        nameAndScore.appendChild(nameLink);
 
+        // 合計点
+        const totalScoreSpan = document.createElement('span');
+        totalScoreSpan.textContent = `: ${entry.totalScore}pts`;
+        totalScoreSpan.style.cursor = 'pointer'; // クリック可能なカーソルを表示
+
+        // 合計点クリックイベント
+        totalScoreSpan.addEventListener('click', () => {
             // この行の全てのスコアを順にクリック扱いにする
             const scores = playerDiv.querySelectorAll('.round-score');
             scores.forEach(score => score.click());
+
+            // マップ範囲を調整
+            const bounds = new google.maps.LatLngBounds();
+
+            // このプレイヤーの全てのラウンド座標を取得し、bounds に追加
+            entry.guesses.forEach(guess => {
+                if (guess.lat && guess.lng) {
+                    bounds.extend(new google.maps.LatLng(guess.lat, guess.lng));
+                }
+            });
+
+            // マップを範囲に合わせてズーム・パンする
+            map.fitBounds(bounds);
         });
 
-        nameAndScore.appendChild(nameLink);
-        nameAndScore.append(`: ${entry.totalScore}pts`);
+        nameAndScore.appendChild(totalScoreSpan);
 
         // トータル時間の部分を小さく表示
         const totalTimeSpan = document.createElement('span');
@@ -277,18 +295,18 @@ function displayLeaderboard(entries) {
         entry.guesses.forEach(guess => {
             const roundScore = document.createElement('span');
             roundScore.textContent = ` R${guess.roundNumber}: ${guess.score}pts`;
-        
+
             // 時間の部分を小さく表示
             const timeSpan = document.createElement('span');
             timeSpan.textContent = `(${guess.time}s) `;
             timeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
-        
+
             roundScore.appendChild(timeSpan);
             roundScore.className = 'round-score'; // 必要ならスタイル用のクラスを追加
-        
+
             roundScore.addEventListener('click', () => {
                 const result = toggleMarkerWithAvatar(guess.lat, guess.lng, avatar.src, guess.roundNumber);  // クリック時にピンをトグル
-        
+
                 // 返り値に応じて文字色を変更
                 if (result) {
                     roundScore.style.color = 'yellowgreen';  // 真理値がtrueなら黄緑色
@@ -296,7 +314,7 @@ function displayLeaderboard(entries) {
                     roundScore.style.color = '';  // falseなら通常の色に戻す
                 }
             });
-        
+
             roundScores.appendChild(roundScore);
         });
 
