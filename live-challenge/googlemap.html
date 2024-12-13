@@ -1,3 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>live challenge archiver</title>
+    <style>
+        /* 概要のスタイル */
+        #summary {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+        }
+        /* マップのサイズを指定 */
+        #map {
+            height: 500px;
+            width: 95%;
+        }
+        
+        /* リーダーボードのスタイル */
+        #leaderboard {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+        }
+        .player {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h3>保存版 Live challenge result</h3>
+    <!-- 概要表示エリア -->
+    <div id="summary">
+        <div id="summaryContent"></div>
+    </div>
+    <div id="map"></div>
+    
+    <!-- リーダーボード表示エリア -->
+    <div id="leaderboard">
+        <h4>リーダーボード (点数クリックでゲス地点へズーム。Click scores to zoom in the places they guessed.)</h4>
+        <div id="leaderboardEntries"></div>
+    </div>
+
+
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-firestore.js"></script>
+    <script>
+
+        // Firebase 初期化
+        firebase.initializeApp({
+            apiKey: 'AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4',
+            projectId: 'mido-96308',
+        });
+
+        const db = firebase.firestore();
+
+        // URLのクエリパラメータからコレクション名とドキュメントIDを取得
+        const params = new URLSearchParams(window.location.search);
+        const collectionName = params.get('collection');
+        const documentId = params.get('document');
+
+        // マップとピンの初期化
+        let map;  // マップ変数をスコープ外で宣言して、他の関数からもアクセス可能に
+        let markers = [];  // 既存のピンを管理するための配列
+        
+        function initMap(coordinates) {
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 5,
+                center: coordinates.length > 0 ? coordinates[0] : { lat: 35.6895, lng: 139.6917 },  // デフォルトの中心
+                streetViewControl: false,  // ペグマン（ストリートビュー）を無効化
+                gestureHandling: 'greedy'  // Ctrlなしでもズームできるようにする
+            });
+        
+            // ピンを最初に全て消す
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];  // ピンをリセット
+        
+            // マップの範囲を動的に調整するための LatLngBounds オブジェクトを作成
+            const bounds = new google.maps.LatLngBounds();
+        
+            // 座標にピンを置く
+            coordinates.forEach((coord, index) => {
+                const marker = new google.maps.Marker({
+                    position: { lat: coord.lat, lng: coord.lng },
+                    map: map,
+                    label: `${index + 1}`,  // インデックス + 1 で番号をラベルとして表示
+                    title: `Lat: ${coord.lat}, Lng: ${coord.lng}`
+                });
+        
+                // ピンがクリックされた時にストリートビューのリンクに飛ぶ
+                marker.addListener('click', () => {
+                    window.open(coord.streetViewLink, '_blank');  // 新しいタブでリンクを開く
+                });
+        
+                markers.push(marker);  // ピンを配列に追加
+        
+                // 現在のピンの座標を bounds に追加
+                bounds.extend(marker.getPosition());
+            });
+        
+            // ピンの座標に応じてマップをリサイズし、すべてのピンが見えるようにする
+            if (coordinates.length > 0) {
+                map.fitBounds(bounds);  // すべてのピンが表示される範囲にズーム・センターを調整
+            }
+        }
+
+        // ピンを追跡するためのオブジェクト（2次元）
+        const activeMarkers = {};
+        const activePolylines = {};  // 点線を管理するためのオブジェクト（2次元）
+        
+        // ピンの追加/削除
+        function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
+            // ラウンドごとのマーカーオブジェクトが存在しない場合、初期化
+            if (!activeMarkers[roundNumber]) {
+                activeMarkers[roundNumber] = {};
+                activePolylines[roundNumber] = {};  // 点線の追跡オブジェクトも初期化
+            }
+        
+            // 該当するラウンドとアバターのマーカーが既に存在する場合、それを消して false を返す
+            if (activeMarkers[roundNumber][avatarUrl]) {
+                // マーカーを地図から削除
+                activeMarkers[roundNumber][avatarUrl].setMap(null);
+                delete activeMarkers[roundNumber][avatarUrl];
+        
+                // 点線が存在する場合、消す
+                if (activePolylines[roundNumber][avatarUrl]) {
+                    activePolylines[roundNumber][avatarUrl].setMap(null);
+                    delete activePolylines[roundNumber][avatarUrl];
+                }
+        
+                return false;  // マーカーを消したので false を返す
+            } else {
+                // 新しいピンを追加して true を返す
+                const marker = new google.maps.Marker({
+                    position: { lat: lat, lng: lng },
+                    map: map,
+                    icon: {
+                        url: avatarUrl,  // アバター画像をピンに設定
+                        scaledSize: new google.maps.Size(40, 40)  // サイズ調整
+                    },
+                    title: `Lat: ${lat}, Lng: ${lng}`
+                });
+        
+                // ピンがクリックされた時にストリートビューのリンクに飛ぶ
+                marker.addListener('click', () => {
+                    window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
+                });
+        
+                // ピンを追跡
+                activeMarkers[roundNumber][avatarUrl] = marker;
+        
+                // マップをその座標に移動し、ズームレベルを調整
+                map.setCenter({ lat: lat, lng: lng });
+                map.setZoom(12);
+        
+                // coordinates.forEachで該当するインデックスのマーカーを取得し、点線を引く
+                if (markers[roundNumber - 1]) {
+                    const polyline = new google.maps.Polyline({
+                        path: [
+                            markers[roundNumber - 1].getPosition(),  // ラウンド番号とインデックスを一致させたマーカーの座標
+                            marker.getPosition()  // 現在のピンの座標
+                        ],
+                        geodesic: true,
+                        strokeColor: '#000000',  // 線の色を黒に設定
+                        strokeOpacity: 0,  // 実際の線の色は透明に
+                        strokeWeight: 2,
+                        icons: [{
+                            icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },  // 点線のパス
+                            offset: '0',
+                            repeat: '10px'  // 点線の繰り返し間隔
+                        }]
+                    });
+        
+                    // 点線を地図に追加
+                    polyline.setMap(map);
+        
+                    // 点線を追跡
+                    activePolylines[roundNumber][avatarUrl] = polyline;
+                }
+        
+                return true;  // 新しいピンを追加したので true を返す
+            }
+        }
+
+
+        
+        // 概要の表示
+        function displaySummary(data) {
+            const summaryContent = document.getElementById('summaryContent');
+            
+            // 最初のラウンド情報を取得
+            const firstRound = data.rounds[0];
+
+            if (firstRound) {
+                const startTime = new Date(firstRound.startTime).toLocaleString();
+                const roundTime = firstRound.roundTime;
+                const movementOptions = firstRound.question?.panoramaQuestionPayload?.movementOptions || {};
+                const mapName = firstRound.question?.panoramaQuestionPayload?.mapName || '不明';
+                const mapSlug = firstRound.question?.panoramaQuestionPayload?.mapSlug || '不明';
+
+                summaryContent.innerHTML = `
+                    <p>Start: ${startTime}   time: ${roundTime}s   ${movementOptions.forbidMoving ? 'No Move ' : 'Move '}, 
+                    ${movementOptions.forbidRotating ? 'No Pan ' : 'Pan '},
+                    ${movementOptions.forbidZooming ? 'No zoom ' : 'Zoom '}</p>
+                    <p>Map: <a href="https://www.geoguessr.com/maps/${mapSlug}" target="_blank">${mapName}</a></p>
+                `;
+            } else {
+                summaryContent.textContent = 'ラウンド情報が見つかりません。';
+            }
+        }
+// リーダーボードの表示
 function displayLeaderboard(entries) {
     const leaderboardContainer = document.getElementById('leaderboardEntries');
     leaderboardContainer.innerHTML = '';  // 既存の内容をクリア
@@ -87,3 +308,60 @@ function displayLeaderboard(entries) {
         leaderboardContainer.appendChild(playerDiv);
     });
 }
+
+
+
+
+        if (collectionName && documentId) {
+            // ドキュメントが指定されている場合、そのドキュメントを取得
+            db.collection(collectionName).doc(documentId)
+                .get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        displaySummary(data);
+                        const coordinates = [];
+
+                        // roundsが存在するか確認
+                        if (data.rounds && Array.isArray(data.rounds)) {
+                            data.rounds.forEach(round => {
+                                const coordinate = round.answer?.coordinateAnswerPayload?.coordinate;
+                                if (coordinate) {
+                                    coordinates.push({
+                                        lat: coordinate.lat,
+                                        lng: coordinate.lng,
+                                        streetViewLink: `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${coordinate.lat},${coordinate.lng}`
+                                    });
+                                }
+                            });
+                        }
+
+                        // マップにピンを表示
+                        initMap(coordinates);
+
+                        // topPlayersが存在するか確認
+                        if (Array.isArray(data.topPlayers)) {
+                            const entries = data.topPlayers;
+                            displayLeaderboard(entries);
+                        } else {
+                            document.getElementById('leaderboardEntries').textContent = 'リーダーボードはありません。';
+                        }
+                    } else {
+                        alert('指定されたドキュメントは存在しません。');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching document: ', error);
+                    alert('ドキュメントの取得中にエラーが発生しました。');
+                });
+        } else {
+            alert('コレクション名またはドキュメントIDが指定されていません。');
+        }
+    </script>
+
+    <!-- Google Maps JavaScript API をロード -->
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw&&region=JP&callback=initMap">
+    </script>
+</body>
+</html>
