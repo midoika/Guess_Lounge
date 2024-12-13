@@ -255,13 +255,13 @@ function displayLeaderboard(entries) {
         nameLink.className = 'name-link'; // 必要に応じてクラスを追加
         nameAndScore.appendChild(nameLink);
 
-        // 合計点
-        const totalScoreSpan = document.createElement('span');
-        totalScoreSpan.textContent = `: ${entry.totalScore}pts`;
-        totalScoreSpan.style.cursor = 'pointer'; // クリック可能なカーソルを表示
+        // 合計点と秒数を囲む要素を作成
+        const scoreAndTimeSpan = document.createElement('span');
+        scoreAndTimeSpan.style.cursor = 'pointer'; // クリック可能なカーソルを表示
+        scoreAndTimeSpan.textContent = `: ${entry.totalScore}pts (${entry.totalTime}s)`;
 
         // 合計点クリックイベント
-        totalScoreSpan.addEventListener('click', () => {
+        scoreAndTimeSpan.addEventListener('click', () => {
             // この行の全てのスコアを順にクリック扱いにする
             const scores = playerDiv.querySelectorAll('.round-score');
             scores.forEach(score => score.click());
@@ -280,15 +280,9 @@ function displayLeaderboard(entries) {
             map.fitBounds(bounds);
         });
 
-        nameAndScore.appendChild(totalScoreSpan);
-
-        // トータル時間の部分を小さく表示
-        const totalTimeSpan = document.createElement('span');
-        totalTimeSpan.textContent = `(${entry.totalTime}s)=`;
-        totalTimeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
+        nameAndScore.appendChild(scoreAndTimeSpan);
 
         const roundScores = document.createElement('span');  // divからspanに変更
-        roundScores.appendChild(totalTimeSpan);
         roundScores.className = 'round-scores'; // 必要に応じてクラスを追加
 
         // ラウンドごとのスコアを表示
@@ -326,8 +320,6 @@ function displayLeaderboard(entries) {
         leaderboardContainer.appendChild(playerDiv);
     });
 }
-
-
 
 
         if (collectionName && documentId) {
