@@ -282,6 +282,11 @@ function displayLeaderboard(entries) {
 
         nameAndScore.appendChild(scoreAndTimeSpan);
 
+        // 合計点とラウンドスコアの間に "=" を挿入
+        const equalsSpan = document.createElement('span');
+        equalsSpan.textContent = ' = ';
+        nameAndScore.appendChild(equalsSpan);
+
         const roundScores = document.createElement('span');  // divからspanに変更
         roundScores.className = 'round-scores'; // 必要に応じてクラスを追加
 
@@ -320,6 +325,7 @@ function displayLeaderboard(entries) {
         leaderboardContainer.appendChild(playerDiv);
     });
 }
+
 
 
         if (collectionName && documentId) {
