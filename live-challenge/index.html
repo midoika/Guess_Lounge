@@ -265,6 +265,19 @@ function displayLeaderboard(entries) {
             // この行の全てのスコアを順にクリック扱いにする
             const scores = playerDiv.querySelectorAll('.round-score');
             scores.forEach(score => score.click());
+
+            // マップ範囲を調整
+            const bounds = new google.maps.LatLngBounds();
+
+            // このプレイヤーの全てのラウンド座標を取得し、bounds に追加
+            entry.guesses.forEach(guess => {
+                if (guess.lat && guess.lng) {
+                    bounds.extend(new google.maps.LatLng(guess.lat, guess.lng));
+                }
+            });
+
+            // マップを範囲に合わせてズーム・パンする
+            map.fitBounds(bounds);
         });
 
         nameAndScore.appendChild(totalScoreSpan);
@@ -313,6 +326,7 @@ function displayLeaderboard(entries) {
         leaderboardContainer.appendChild(playerDiv);
     });
 }
+
 
 
 
