@@ -41,7 +41,7 @@
     const docId = urlParams.get('id'); // Use ?id=documentId in URL
 
     if (docId) {
-      db.collection("matches_season_2").doc(docId).get().then((doc) => {
+      db.collection("matches_season_3").doc(docId).get().then((doc) => {
         if (doc.exists) {
           const data = doc.data();
 
