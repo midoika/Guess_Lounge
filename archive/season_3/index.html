@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>GeoGuessr 戦績表示</title>
+  <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-firestore.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f4f4f4; }
+    .chart-container { width: 100%; max-width: 600px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1 id="name"></h1>
+  <div id="matches-table"></div>
+  <div id="nm-table"></div>
+  <div id="nmpz-table"></div>
+  <div class="chart-container">
+    <canvas id="matchesChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <canvas id="nmChart"></canvas>
+  </div>
+  <div class="chart-container">
+    <canvas id="nmpzChart"></canvas>
+  </div>
+
+  <script>
+    // Firebase initialization
+    firebase.initializeApp({
+	      apiKey: 'AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4',
+        projectId: 'mido-96308',
+    });
+    const db = firebase.firestore();
+
+    // Retrieve document ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const docId = urlParams.get('id'); // Use ?id=documentId in URL
+
+    if (docId) {
+      db.collection("matches_season_2").doc(docId).get().then((doc) => {
+        if (doc.exists) {
+          const data = doc.data();
+
+          // Set name with profile link
+          document.getElementById("name").innerHTML = `<a href="${data.geoguessr_profile_url}" target="_blank">${data.name}</a>`;
+
+          // Render tables for each category
+          createTable("matches-table", data.matches, "Move");
+          createTable("nm-table", data.nm, "NM");
+          createTable("nmpz-table", data.nmpz, "NMPZ");
+
+          // Render line charts
+          createLineChart("matchesChart", data.matches, "Move Score Change");
+          createLineChart("nmChart", data.nm, "NM Score Change");
+          createLineChart("nmpzChart", data.nmpz, "NMPZ Score Change");
+
+        } else {
+          alert("Document not found!");
+        }
+      }).catch((error) => {
+        console.error("Error fetching document: ", error);
+      });
+    } else {
+      alert("No document ID specified in URL.");
+    }
+
+    // Function to create tables
+    function createTable(elementId, data, title) {
+      // Calculate win/loss counts and win percentage
+      const winCount = data.filter(item => item.result === "win").length;
+      const lossCount = data.filter(item => item.result === "loss").length;
+      const winPercentage = ((winCount / (data.length - 1) ) * 100).toFixed(1); // 勝率計算（小数点1位）
+
+      // テーブルの先頭に勝率と勝敗数を表示
+      let html = `<h2>${title}</h2><p>Win Rate: ${winPercentage}% | Win: ${winCount}, Loss: ${lossCount}</p>`;
+      html += `<table><tr><th>Opponent</th><th>Result</th><th>Score</th><th>URL</th></tr>`;
+
+      data.forEach(item => {
+        // URLが `http://example.com/` の場合は非表示
+        const urls = (item.url || [])
+          .filter(url => url !== "http://example.com")
+          .map(url => `<a href="${url}" target="_blank">Link</a>`)
+          .join(", ");
+
+        html += `<tr><td>${item.opponent}</td><td>${item.result}</td><td>${item.score}</td><td>${urls}</td></tr>`;
+      });
+
+      html += "</table>";
+      document.getElementById(elementId).innerHTML = html;
+    }
+
+
+
+    // Function to create line charts for score change
+    function createLineChart(elementId, data, label) {
+      const scores = data.map(item => item.score);
+      const labels = data.map((_, index) => `Match ${index + 1}`);
+
+      new Chart(document.getElementById(elementId), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: label,
+            data: scores,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 2,
+            fill: false
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: true },
+            tooltip: { mode: 'index', intersect: false }
+          },
+          scales: {
+            x: { display: true, title: { display: true, text: 'Match Number' } },
+            y: { display: true, title: { display: true, text: 'Score' } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
+
