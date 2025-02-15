@@ -2,7 +2,7 @@
 - シーズン0のリザルト[https://midoika.github.io/Guess_Lounge/archive/season_0/docs/html/index.html](https://midoika.github.io/Guess_Lounge/archive/season_0/docs/html/index.html)
 - リアルタイム戦績一覧表示[https://midoika.github.io/Guess_Lounge/archive/season_2/?id=589449747471925269](https://midoika.github.io/Guess_Lounge/archive/season_2/?id=589449747471925269)
   - 自身のGuess Loungeのリアルタイム戦績を表示する場合は「=」以降を自分のDiscord user IDにしてください。
-- プロフィールURLの登録方法 [https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url/how_to_register_your_profile_url](https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url/how_to_register_your_profile_url)
+- プロフィールURLの登録方法 [https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url](https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url)
 
 # 🇯🇵
 ## 登録 (@マルチ募集、@Guess Lounge Player 、モデレーター)
