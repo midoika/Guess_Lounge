@@ -50,6 +50,7 @@
     <button onclick="copyOutput()">コピー</button>
 
     <h2>結果:</h2>
+    <h4>スプレッドシートにペーストする際は、<b>[データ] -> [テキストを列に分割]</b> を忘れずに</h4>
     <textarea id="output" readonly></textarea>
 
     <script>
@@ -104,22 +105,21 @@
             const mergedList = [];
             for (const [name, data] of Object.entries(mergedScores)) {
                 const totalPosition = data.positions.reduce((sum, pos) => sum + (pos || 10000), 0); // 圏外を高順位に
-                const validPositions = data.positions.filter(pos => pos !== null);
-                const isOutOfRanking = validPositions.length === 0;
+                const hasOutOfRanking = data.positions.includes(null);
 
-                mergedList.push({ name, ...data, totalPosition, isOutOfRanking });
+                mergedList.push({ name, ...data, totalPosition, hasOutOfRanking });
             }
 
             mergedList.sort((a, b) => {
-                if (a.isOutOfRanking && !b.isOutOfRanking) return 1;
-                if (!a.isOutOfRanking && b.isOutOfRanking) return -1;
+                if (a.hasOutOfRanking && !b.hasOutOfRanking) return 1;
+                if (!a.hasOutOfRanking && b.hasOutOfRanking) return -1;
                 return a.totalPosition - b.totalPosition;
             });
 
             let output = "Rank,Name," + Array.from({ length: scoreTableCount }, (_, i) => `Position ${i + 1}`).join(",") + ",Total Position\n";
             let rank = 1;
-            mergedList.forEach(({ name, positions, totalPosition, isOutOfRanking }, index) => {
-                const rankDisplay = isOutOfRanking ? "圏外" : rank++;
+            mergedList.forEach(({ name, positions, totalPosition, hasOutOfRanking }) => {
+                const rankDisplay = hasOutOfRanking ? "圏外" : rank++;
                 output += `${rankDisplay},${name},${positions.map(p => p ?? "圏外").join(",")},${totalPosition}\n`;
             });
 
