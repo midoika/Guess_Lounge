@@ -32,7 +32,7 @@
     </style>
 </head>
 <body>
-    <h1>スコア統合ツール (順位基準)</h1>
+    <h1>スコア統合ツール</h1>
     <p>スコア表を追加し、名前ごとの順位を統合します。</p>
 
     <div id="inputContainer">
@@ -116,9 +116,11 @@
                 return a.totalPosition - b.totalPosition;
             });
 
-            let output = "Name," + Array.from({ length: scoreTableCount }, (_, i) => `Position ${i + 1}`).join(",") + ",Total Position\n";
-            mergedList.forEach(({ name, positions, totalPosition }) => {
-                output += `${name},${positions.map(p => p ?? "圏外").join(",")},${totalPosition}\n`;
+            let output = "Rank,Name," + Array.from({ length: scoreTableCount }, (_, i) => `Position ${i + 1}`).join(",") + ",Total Position\n";
+            let rank = 1;
+            mergedList.forEach(({ name, positions, totalPosition, isOutOfRanking }, index) => {
+                const rankDisplay = isOutOfRanking ? "圏外" : rank++;
+                output += `${rankDisplay},${name},${positions.map(p => p ?? "圏外").join(",")},${totalPosition}\n`;
             });
 
             document.getElementById("output").value = output.trim();
