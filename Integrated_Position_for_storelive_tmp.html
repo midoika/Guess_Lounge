@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スコア統合ツール (合計順位基準)</title>
+    <title>スコア統合ツール (総合順位基準)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,7 +50,6 @@
     <button onclick="copyOutput()">コピー</button>
 
     <h2>結果:</h2>
-    <h4>スプレッドシートにペーストする際は、<b>[データ] -> [テキストを列に分割]</b> を忘れずに</h4>
     <textarea id="output" readonly></textarea>
 
     <script>
@@ -105,9 +104,10 @@
             const mergedList = [];
             for (const [name, data] of Object.entries(mergedScores)) {
                 const totalPosition = data.positions.reduce((sum, pos) => sum + (pos || 10000), 0); // 圏外を高順位に
+                const totalScore = data.scores.reduce((sum, score) => sum + score, 0);
                 const hasOutOfRanking = data.positions.includes(null);
 
-                mergedList.push({ name, ...data, totalPosition, hasOutOfRanking });
+                mergedList.push({ name, ...data, totalPosition, totalScore, hasOutOfRanking });
             }
 
             mergedList.sort((a, b) => {
@@ -116,11 +116,16 @@
                 return a.totalPosition - b.totalPosition;
             });
 
-            let output = "Rank,Name," + Array.from({ length: scoreTableCount }, (_, i) => `Position ${i + 1}`).join(",") + ",Total Position\n";
+            let output = "Rank,Name," +
+                Array.from({ length: scoreTableCount }, (_, i) => `Position ${i + 1}`).join(",") +
+                ",Total Position," +
+                Array.from({ length: scoreTableCount }, (_, i) => `Score ${i + 1}`).join(",") +
+                ",Total Score\n";
+
             let rank = 1;
-            mergedList.forEach(({ name, positions, totalPosition, hasOutOfRanking }) => {
+            mergedList.forEach(({ name, positions, scores, totalPosition, totalScore, hasOutOfRanking }) => {
                 const rankDisplay = hasOutOfRanking ? "圏外" : rank++;
-                output += `${rankDisplay},${name},${positions.map(p => p ?? "圏外").join(",")},${totalPosition}\n`;
+                output += `${rankDisplay},${name},${positions.map(p => p ?? "圏外").join(",")},${totalPosition},${scores.join(",")},${totalScore}\n`;
             });
 
             document.getElementById("output").value = output.trim();
