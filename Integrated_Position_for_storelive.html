@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>スコア統合ツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        .input-area {
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+        }
+        button {
+            margin-top: 10px;
+        }
+        #output {
+            background-color: #f4f4f4;
+            padding: 10px;
+            white-space: pre-wrap;
+            border: 1px solid #ccc;
+            width: 100%;
+            height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>スコア統合ツール</h1>
+    <p>スコア表を追加し、名前ごとの順位を統合します。</p>
+
+    <div id="inputContainer">
+        <div class="input-area">
+            <label for="input1">スコア表1:</label>
+            <textarea id="input1"></textarea>
+        </div>
+        <div class="input-area">
+            <label for="input2">スコア表2:</label>
+            <textarea id="input2"></textarea>
+        </div>
+    </div>
+    <button onclick="addScoreInput()">[スコア表を更に追加する]</button>
+    <button onclick="mergeScores()">統合</button>
+    <button onclick="copyOutput()">コピー</button>
+
+    <h2>結果:</h2>
+    <textarea id="output" readonly></textarea>
+
+    <script>
+        let scoreTableCount = 2; // 初期スコア表の数
+
+        function addScoreInput() {
+            scoreTableCount++;
+            const container = document.getElementById("inputContainer");
+            const newInputArea = document.createElement("div");
+            newInputArea.className = "input-area";
+            newInputArea.innerHTML = `
+                <label for="input${scoreTableCount}">スコア表${scoreTableCount}:</label>
+                <textarea id="input${scoreTableCount}"></textarea>
+            `;
+            container.appendChild(newInputArea);
+        }
+
+        function parseScores(input) {
+            const lines = input.trim().split("\n");
+            const result = {};
+            lines.slice(1).forEach(line => {
+                const [position, name, totalScore, totalTime] = line.split(",");
+                if (name) {
+                    result[name] = {
+                        position: parseInt(position, 10) || null,
+                        score: parseInt(totalScore, 10) || 0,
+                        time: parseInt(totalTime, 10) || 0
+                    };
+                }
+            });
+            return result;
+        }
+
+        function mergeScores() {
+            const mergedScores = {};
+            for (let i = 1; i <= scoreTableCount; i++) {
+                const input = document.getElementById(`input${i}`).value;
+                if (input.trim()) {
+                    const scores = parseScores(input);
+                    for (const [name, data] of Object.entries(scores)) {
+                        if (!mergedScores[name]) {
+                            mergedScores[name] = {
+                                positions: Array(scoreTableCount).fill(null),
+                                scores: Array(scoreTableCount).fill(0),
+                                times: Array(scoreTableCount).fill(0)
+                            };
+                        }
+                        mergedScores[name].positions[i - 1] = data.position;
+                        mergedScores[name].scores[i - 1] = data.score;
+                        mergedScores[name].times[i - 1] = data.time;
+                    }
+                }
+            }
+
+            const mergedList = [];
+            for (const [name, data] of Object.entries(mergedScores)) {
+                const totalPosition = data.positions.reduce((sum, pos) => sum + (pos || 10000), 0); // 圏外を高順位に
+                const totalScore = data.scores.reduce((sum, score) => sum + score, 0);
+                const totalTime = data.times.reduce((sum, time) => sum + time, 0);
+                const hasOutOfRanking = data.positions.includes(null);
+
+                mergedList.push({ name, ...data, totalPosition, totalScore, totalTime, hasOutOfRanking });
+            }
+
+            mergedList.sort((a, b) => {
+                if (a.hasOutOfRanking && !b.hasOutOfRanking) return 1;
+                if (!a.hasOutOfRanking && b.hasOutOfRanking) return -1;
+                return a.totalPosition - b.totalPosition;
+            });
+
+            let output = "Rank,Name," +
+                Array.from({ length: scoreTableCount }, (_, i) => `Position ${i + 1}`).join(",") +
+                ",Total Position," +
+                Array.from({ length: scoreTableCount }, (_, i) => `Score ${i + 1}`).join(",") +
+                ",Total Score," +
+                Array.from({ length: scoreTableCount }, (_, i) => `Time ${i + 1}`).join(",") +
+                ",Total Time\n";
+
+            let rank = 1;
+            mergedList.forEach(({ name, positions, scores, times, totalPosition, totalScore, totalTime, hasOutOfRanking }) => {
+                const rankDisplay = hasOutOfRanking ? "圏外" : rank++;
+                output += `${rankDisplay},${name},${positions.map(p => p ?? "圏外").join(",")},${totalPosition},${scores.join(",")},${totalScore},${times.join(",")},${totalTime}\n`;
+            });
+
+            document.getElementById("output").value = output.trim();
+        }
+
+        function copyOutput() {
+            const output = document.getElementById("output");
+            output.select();
+            document.execCommand("copy");
+            alert("結果をコピーしました！");
+        }
+    </script>
+</body>
+</html>
