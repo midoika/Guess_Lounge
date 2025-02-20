@@ -392,7 +392,7 @@ function displayLeaderboard(entries) {
             item.addEventListener('mouseout', () => item.style.background = '');
             return item;
         }
-    
+
         // ピンの右クリックイベントにコンテキストメニューを追加
         function addMarkerWithContextMenu(lat, lng, map) {
             const marker = new google.maps.Marker({
@@ -423,24 +423,9 @@ function displayLeaderboard(entries) {
                     window.open(`https://www.openstreetmap.org/#map=15/${lat}/${lng}`, '_blank');
                 }));
         
-                // メニューの表示位置を調整（クリックした場所のすぐ右となりに表示）
-                const mapDiv = document.getElementById('map');
-                const rect = mapDiv.getBoundingClientRect();
-                const menuWidth = contextMenu.offsetWidth;
-                const menuHeight = contextMenu.offsetHeight;
-                let posX = event.pixel.x + 10;
-                let posY = event.pixel.y;
-        
-                // 画面外に出ないように調整
-                if (posX + menuWidth > rect.width) {
-                    posX = event.pixel.x - menuWidth - 10;
-                }
-                if (posY + menuHeight > rect.height) {
-                    posY = event.pixel.y - menuHeight - 10;
-                }
-        
-                contextMenu.style.left = `${posX}px`;
-                contextMenu.style.top = `${posY}px`;
+                // マウスポインタの右隣にメニューを表示
+                contextMenu.style.left = `${event.domEvent.clientX + 10}px`;
+                contextMenu.style.top = `${event.domEvent.clientY}px`;
                 contextMenu.style.display = 'block';
             });
         
