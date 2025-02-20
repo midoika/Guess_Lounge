@@ -400,11 +400,11 @@ function displayLeaderboard(entries) {
                 map: map,
                 title: `Lat: ${lat}, Lng: ${lng}`
             });
-    
+        
             marker.addListener('click', () => {
                 window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
             });
-    
+        
             marker.addListener('rightclick', (event) => {
                 contextMenu.innerHTML = '';
                 contextMenu.appendChild(createMenuItem('リンクをコピーする', () => {
@@ -422,15 +422,31 @@ function displayLeaderboard(entries) {
                 contextMenu.appendChild(createMenuItem('Open Street Map で見る', () => {
                     window.open(`https://www.openstreetmap.org/#map=15/${lat}/${lng}`, '_blank');
                 }));
-    
-                // メニューの表示位置を調整
-                contextMenu.style.left = `${event.pixel.x+10}px`;
-                contextMenu.style.top = `${event.pixel.y}px`;
+        
+                // メニューの表示位置を調整（クリックした場所のすぐ右となりに表示）
+                const mapDiv = document.getElementById('map');
+                const rect = mapDiv.getBoundingClientRect();
+                const menuWidth = contextMenu.offsetWidth;
+                const menuHeight = contextMenu.offsetHeight;
+                let posX = event.pixel.x + 10;
+                let posY = event.pixel.y;
+        
+                // 画面外に出ないように調整
+                if (posX + menuWidth > rect.width) {
+                    posX = event.pixel.x - menuWidth - 10;
+                }
+                if (posY + menuHeight > rect.height) {
+                    posY = event.pixel.y - menuHeight - 10;
+                }
+        
+                contextMenu.style.left = `${posX}px`;
+                contextMenu.style.top = `${posY}px`;
                 contextMenu.style.display = 'block';
             });
-    
+        
             return marker;
         }
+
     
         // クリック時にメニューを閉じる
         document.addEventListener('click', () => {
