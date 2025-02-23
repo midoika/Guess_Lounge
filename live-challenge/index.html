@@ -422,10 +422,12 @@ function displayLeaderboard(entries) {
                 contextMenu.appendChild(createMenuItem('Open Street Map で見る', () => {
                     window.open(`https://www.openstreetmap.org/#map=15/${lat}/${lng}`, '_blank');
                 }));
-                contextMenu.appendChild(createMenuItem('Appleマップ で見る', () => {
+                contextMenu.appendChild(createMenuItem('Appleマップ (β) で見る', () => {
                     window.open(`https://beta.maps.apple.com/?ll=${lat}%2c${lng}`, '_blank');
                 }));
-        
+                contextMenu.appendChild(createMenuItem('マピオンで見る', () => {
+                    window.open(`https://www.mapion.co.jp/m2/${lat},${lng},15`, '_blank');
+                }));
                 // マウスポインタの右隣にメニューを表示
                 contextMenu.style.left = `${event.domEvent.clientX + 10}px`;
                 contextMenu.style.top = `${event.domEvent.clientY}px`;
