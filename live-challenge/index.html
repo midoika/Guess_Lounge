@@ -414,7 +414,7 @@ function displayLeaderboard(entries) {
                     navigator.clipboard.writeText(`${lat},${lng}`);
                 }));
                 contextMenu.appendChild(createMenuItem('地理院地図で見る', () => {
-                    window.open(`https://maps.gsi.go.jp/#15/${lat}/${lng}/&base=std&ls=std%7Chillshademap%2C0.37%7Crelief_free&blend=01&disp=110`, '_blank');
+                    window.open(`https://maps.gsi.go.jp/#15/${lat}/${lng}/&base=std&ls=std%7Chillshademap%2C0.37%7Crelief_free&blend=01&disp=110&d=m`, '_blank');
                 }));
                 contextMenu.appendChild(createMenuItem('Yahoo! マップで見る', () => {
                     window.open(`https://map.yahoo.co.jp/?lat=${lat}&lon=${lng}&zoom=14&maptype=basic`, '_blank');
