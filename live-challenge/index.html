@@ -416,6 +416,9 @@ function displayLeaderboard(entries) {
                 contextMenu.appendChild(createMenuItem('地理院地図で見る', () => {
                     window.open(`https://maps.gsi.go.jp/#15/${lat}/${lng}/&base=std&ls=std%7Chillshademap%2C0.37%7Crelief_free&blend=01&disp=110&d=m&reliefdata=25G0000FFGAG0095FFG32G00EEFFG64G91FF00G1F4GFFFF00G5DCGFF8C00GGFF4400`, '_blank');
                 }));
+                contextMenu.appendChild(createMenuItem('むかしの市町村境界マップで見る', () => {
+                    window.open(`https://hanishina.net/maps/historymap.html?y=${lat}&x=${lng}&z=12&date0=1995-01-01&date1=2020-01-01&base0=google&base1=paleMap&label0=true&label1=false&color0=false&color1=false&rail0=false&rail1=false&did0=false&did1=false&dual=false`, '_blank');
+                }));
                 contextMenu.appendChild(createMenuItem('Yahoo! マップで見る', () => {
                     window.open(`https://map.yahoo.co.jp/?lat=${lat}&lon=${lng}&zoom=14&maptype=basic`, '_blank');
                 }));
