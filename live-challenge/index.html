@@ -431,6 +431,9 @@ function displayLeaderboard(entries) {
                 contextMenu.appendChild(createMenuItem('マピオンで見る', () => {
                     window.open(`https://www.mapion.co.jp/m2/${lat},${lng},15`, '_blank');
                 }));
+                contextMenu.appendChild(createMenuItem('MapFanで見る', () => {
+                    window.open(`https://mapfan.com/map?c=${lat},${lng},15&s=std,pc,ja&p=none`, '_blank');
+                }));
                 // マウスポインタの右隣にメニューを表示
                 contextMenu.style.left = `${event.domEvent.clientX + 10}px`;
                 contextMenu.style.top = `${event.domEvent.clientY}px`;
