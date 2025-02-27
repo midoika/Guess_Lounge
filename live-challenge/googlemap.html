@@ -47,7 +47,8 @@
     
     <!-- リーダーボード表示エリア -->
     <div id="leaderboard">
-        <h4>リーダーボード (点数クリックでゲス地点へズーム。Click scores to zoom in the places they guessed.)</h4>
+        <h4>リーダーボード (点数クリックでゲス地点へズームする。Click scores to zoom in the places they guessed.)</h4>
+        <h4>(📍右クリックで他のマップで見る。Right-click map pin and choose other maps.)</h4>
         <div id="leaderboardEntries"></div>
     </div>
 
@@ -400,11 +401,21 @@ function displayLeaderboard(entries) {
                 map: map,
                 title: `Lat: ${lat}, Lng: ${lng}`
             });
-        
             marker.addListener('click', () => {
                 window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
             });
+            // **モバイルの長押しを検知**
+            let touchTimer;
+            marker.addListener('touchstart', (event) => {
+                touchTimer = setTimeout(() => {
+                    showContextMenu(event.domEvent.touches[0].clientX, event.domEvent.touches[0].clientY, lat, lng);
+                }, 500); // 0.5秒以上押したらメニュー表示
+            });
         
+            marker.addListener('touchend', () => {
+                clearTimeout(touchTimer); // 指を離したらキャンセル
+            });
+            
             marker.addListener('rightclick', (event) => {
                 contextMenu.innerHTML = '';
                 contextMenu.appendChild(createMenuItem('リンクをコピーする', () => {
@@ -414,7 +425,10 @@ function displayLeaderboard(entries) {
                     navigator.clipboard.writeText(`${lat},${lng}`);
                 }));
                 contextMenu.appendChild(createMenuItem('地理院地図で見る', () => {
-                    window.open(`https://maps.gsi.go.jp/#15/${lat}/${lng}/&base=std&ls=std%7Chillshademap%2C0.37%7Crelief_free&blend=01&disp=110`, '_blank');
+                    window.open(`https://maps.gsi.go.jp/#15/${lat}/${lng}/&base=std&ls=std%7Chillshademap%2C0.37%7Crelief_free&blend=01&disp=110&d=m&reliefdata=25G0000FFGAG0095FFG32G00EEFFG64G91FF00G1F4GFFFF00G5DCGFF8C00GGFF4400`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('むかしの市町村境界マップで見る', () => {
+                    window.open(`https://hanishina.net/maps/historymap.html?y=${lat}&x=${lng}&z=12&date0=1995-01-01&date1=2020-01-01&base0=google&base1=paleMap&label0=true&label1=false&color0=false&color1=false&rail0=false&rail1=false&did0=false&did1=false&dual=false`, '_blank');
                 }));
                 contextMenu.appendChild(createMenuItem('Yahoo! マップで見る', () => {
                     window.open(`https://map.yahoo.co.jp/?lat=${lat}&lon=${lng}&zoom=14&maptype=basic`, '_blank');
@@ -422,7 +436,15 @@ function displayLeaderboard(entries) {
                 contextMenu.appendChild(createMenuItem('Open Street Map で見る', () => {
                     window.open(`https://www.openstreetmap.org/#map=15/${lat}/${lng}`, '_blank');
                 }));
-        
+                contextMenu.appendChild(createMenuItem('Appleマップ (β) で見る', () => {
+                    window.open(`https://beta.maps.apple.com/?ll=${lat}%2c${lng}`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('マピオンで見る', () => {
+                    window.open(`https://www.mapion.co.jp/m2/${lat},${lng},15`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('MapFanで見る', () => {
+                    window.open(`https://mapfan.com/map?c=${lat},${lng},15&s=std,pc,ja&p=none`, '_blank');
+                }));
                 // マウスポインタの右隣にメニューを表示
                 contextMenu.style.left = `${event.domEvent.clientX + 10}px`;
                 contextMenu.style.top = `${event.domEvent.clientY}px`;
@@ -431,7 +453,30 @@ function displayLeaderboard(entries) {
         
             return marker;
         }
-
+        // **コンテキストメニュー表示関数**
+        function showContextMenu(x, y, lat, lng) {
+            contextMenu.innerHTML = '';
+            contextMenu.appendChild(createMenuItem('リンクをコピーする', () => {
+                navigator.clipboard.writeText(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`);
+            }));
+            contextMenu.appendChild(createMenuItem('座標をコピーする', () => {
+                navigator.clipboard.writeText(`${lat},${lng}`);
+            }));
+            contextMenu.appendChild(createMenuItem('地理院地図で見る', () => {
+                window.open(`https://maps.gsi.go.jp/#15/${lat}/${lng}/&base=std`, '_blank');
+            }));
+            contextMenu.appendChild(createMenuItem('Yahoo! マップで見る', () => {
+                window.open(`https://map.yahoo.co.jp/?lat=${lat}&lon=${lng}&zoom=14`, '_blank');
+            }));
+            contextMenu.appendChild(createMenuItem('Open Street Map で見る', () => {
+                window.open(`https://www.openstreetmap.org/#map=15/${lat}/${lng}`, '_blank');
+            }));
+        
+            // **コンテキストメニューを指定位置に表示**
+            contextMenu.style.left = `${x}px`;
+            contextMenu.style.top = `${y}px`;
+            contextMenu.style.display = 'block';
+        }
     
         // クリック時にメニューを閉じる
         document.addEventListener('click', () => {
