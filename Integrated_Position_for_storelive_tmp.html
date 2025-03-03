@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>スコア統合ツール (総合順位基準)</title>
+    <title>スコア統合ツール (順位基準)</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -71,11 +71,12 @@
             const lines = input.trim().split("\n");
             const result = {};
             lines.slice(1).forEach(line => {
-                const [position, name, totalScore] = line.split(",");
+                const [position, name, totalScore, totalTime] = line.split(",");
                 if (name) {
                     result[name] = {
                         position: parseInt(position, 10) || null,
-                        score: parseInt(totalScore, 10) || 0
+                        score: parseInt(totalScore, 10) || 0,
+                        time: parseInt(totalTime, 10) || 0
                     };
                 }
             });
@@ -92,40 +93,51 @@
                         if (!mergedScores[name]) {
                             mergedScores[name] = {
                                 positions: Array(scoreTableCount).fill(null),
-                                scores: Array(scoreTableCount).fill(0)
+                                scores: Array(scoreTableCount).fill(0),
+                                times: Array(scoreTableCount).fill(0)
                             };
                         }
                         mergedScores[name].positions[i - 1] = data.position;
                         mergedScores[name].scores[i - 1] = data.score;
+                        mergedScores[name].times[i - 1] = data.time;
                     }
                 }
             }
 
             const mergedList = [];
             for (const [name, data] of Object.entries(mergedScores)) {
-                const totalPosition = data.positions.reduce((sum, pos) => sum + (pos || 10000), 0); // 圏外を高順位に
+                const totalPosition = data.positions.reduce((sum, pos) => sum + (pos || 10000), 0);
                 const totalScore = data.scores.reduce((sum, score) => sum + score, 0);
+                const totalTime = data.times.reduce((sum, time) => sum + time, 0);
                 const hasOutOfRanking = data.positions.includes(null);
 
-                mergedList.push({ name, ...data, totalPosition, totalScore, hasOutOfRanking });
+                mergedList.push({ name, ...data, totalPosition, totalScore, totalTime, hasOutOfRanking });
             }
 
             mergedList.sort((a, b) => {
                 if (a.hasOutOfRanking && !b.hasOutOfRanking) return 1;
                 if (!a.hasOutOfRanking && b.hasOutOfRanking) return -1;
-                return a.totalPosition - b.totalPosition;
+                if (a.totalPosition !== b.totalPosition) return a.totalPosition - b.totalPosition;
+                if (a.totalScore !== b.totalScore) return b.totalScore - a.totalScore;
+                return a.totalTime - b.totalTime;
             });
 
             let output = "Rank,Name," +
                 Array.from({ length: scoreTableCount }, (_, i) => `Position ${i + 1}`).join(",") +
                 ",Total Position," +
                 Array.from({ length: scoreTableCount }, (_, i) => `Score ${i + 1}`).join(",") +
-                ",Total Score\n";
+                ",Total Score," +
+                Array.from({ length: scoreTableCount }, (_, i) => `Time ${i + 1}`).join(",") +
+                ",Total Time\n";
 
             let rank = 1;
-            mergedList.forEach(({ name, positions, scores, totalPosition, totalScore, hasOutOfRanking }) => {
+            mergedList.forEach(({ name, positions, scores, times, totalPosition, totalScore, totalTime, hasOutOfRanking }, index) => {
+                const previous = mergedList[index - 1];
+                if (index > 0 && !hasOutOfRanking && previous.totalPosition === totalPosition && previous.totalScore === totalScore) {
+                    rank--; // 同順位
+                }
                 const rankDisplay = hasOutOfRanking ? "圏外" : rank++;
-                output += `${rankDisplay},${name},${positions.map(p => p ?? "圏外").join(",")},${totalPosition},${scores.join(",")},${totalScore}\n`;
+                output += `${rankDisplay},${name},${positions.map(p => p ?? "圏外").join(",")},${totalPosition},${scores.join(",")},${totalScore},${times.join(",")},${totalTime}\n`;
             });
 
             document.getElementById("output").value = output.trim();
