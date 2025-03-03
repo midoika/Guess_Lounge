@@ -106,7 +106,7 @@
 
             const mergedList = [];
             for (const [name, data] of Object.entries(mergedScores)) {
-                const totalPosition = data.positions.reduce((sum, pos) => sum + (pos || 10000), 0); // 圏外を高順位に
+                const totalPosition = data.positions.reduce((sum, pos) => sum + (pos || 10000), 0);
                 const totalScore = data.scores.reduce((sum, score) => sum + score, 0);
                 const totalTime = data.times.reduce((sum, time) => sum + time, 0);
                 const hasOutOfRanking = data.positions.includes(null);
@@ -117,7 +117,9 @@
             mergedList.sort((a, b) => {
                 if (a.hasOutOfRanking && !b.hasOutOfRanking) return 1;
                 if (!a.hasOutOfRanking && b.hasOutOfRanking) return -1;
-                return a.totalPosition - b.totalPosition;
+                if (a.totalPosition !== b.totalPosition) return a.totalPosition - b.totalPosition;
+                if (a.totalScore !== b.totalScore) return b.totalScore - a.totalScore;
+                return a.totalTime - b.totalTime;
             });
 
             let output = "Rank,Name," +
@@ -129,7 +131,11 @@
                 ",Total Time\n";
 
             let rank = 1;
-            mergedList.forEach(({ name, positions, scores, times, totalPosition, totalScore, totalTime, hasOutOfRanking }) => {
+            mergedList.forEach(({ name, positions, scores, times, totalPosition, totalScore, totalTime, hasOutOfRanking }, index) => {
+                const previous = mergedList[index - 1];
+                if (index > 0 && !hasOutOfRanking && previous.totalPosition === totalPosition && previous.totalScore === totalScore) {
+                    rank--; // 同順位
+                }
                 const rankDisplay = hasOutOfRanking ? "圏外" : rank++;
                 output += `${rankDisplay},${name},${positions.map(p => p ?? "圏外").join(",")},${totalPosition},${scores.join(",")},${totalScore},${times.join(",")},${totalTime}\n`;
             });
