@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GMP Firestore Marker Display</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: 'AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4',
+            projectId: 'mido-96308',
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        let map;
+        
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 10
+            });
+            
+            db.collection("metas").get()
+                .then(querySnapshot => {
+                    const bounds = new google.maps.LatLngBounds();
+                    
+                    querySnapshot.forEach(doc => {
+                        const item = doc.data();
+                        const position = new google.maps.LatLng(parseFloat(item.lat), parseFloat(item.lng));
+                        bounds.extend(position);
+                        
+                        const marker = new google.maps.Marker({
+                            position: position,
+                            map: map,
+                            icon: {
+                                url: item.url,
+                                scaledSize: new google.maps.Size(40, 40)
+                            }
+                        });
+                        
+                        const infoWindow = new google.maps.InfoWindow({
+                            content: `<strong>${item.name}</strong><br>${item.type} (${item.range})<br><img src="${item.url}" width="100">`
+                        });
+                        
+                        marker.addListener("click", () => {
+                            infoWindow.open(map, marker);
+                        });
+                    });
+                    
+                    map.fitBounds(bounds);
+                })
+                .catch(error => console.error("Error loading Firestore data:", error));
+        }
+    </script>
+</head>
+<body onload="initMap()">
+    <div id="map" style="width: 100%; height: 600px;"></div>
+</body>
+</html>
