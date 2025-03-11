@@ -18,7 +18,9 @@
         
         function initMap() {
             map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 10
+                zoom: 10,
+                streetViewControl: false,  // ペグマン（ストリートビュー）を無効化
+                gestureHandling: 'greedy'  // Ctrlなしでもズームできるようにする
             });
             
             db.collection("metas").get()
@@ -35,12 +37,12 @@
                             map: map,
                             icon: {
                                 url: item.url,
-                                scaledSize: new google.maps.Size(40, 40)
+                                scaledSize: new google.maps.Size(50, 50)
                             }
                         });
                         
                         const infoWindow = new google.maps.InfoWindow({
-                            content: `<strong>${item.name}</strong><br>${item.type} (${item.range})<br><img src="${item.url}" width="100">`
+                            content: `<strong>${item.name}</strong><br>${item.type} <br>(${item.range})<br><img src="${item.url}" width="100">`
                         });
                         
                         marker.addListener("click", () => {
