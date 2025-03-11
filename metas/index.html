@@ -2,17 +2,15 @@
 <html>
 <head>
     <title>GMP JSON Marker Display</title>
-<!--     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw&region=JP"></script> -->
-    <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw&&region=JP">
-    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw&region=JP"></script>
+    <script>
         let map;
         
         function initMap() {
             map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 10
             });
-            
+
             fetch("data.json") // JSONファイルを取得
                 .then(response => response.json())
                 .then(data => {
@@ -39,8 +37,12 @@
                             infoWindow.open(map, marker);
                         });
                     });
-                    
-                    map.fitBounds(bounds); // すべてのマーカーが映るように調整
+
+                    if (!data.length) {
+                        console.error("JSONファイルにデータがありません");
+                    } else {
+                        map.fitBounds(bounds); // すべてのマーカーが映るように調整
+                    }
                 })
                 .catch(error => console.error("Error loading JSON:", error));
         }
