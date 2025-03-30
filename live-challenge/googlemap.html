@@ -71,7 +71,8 @@
         const params = new URLSearchParams(window.location.search);
         const collectionName = params.get('collection');
         const documentId = params.get('document');
-
+        const profileUrl = params.get('url');
+        
         // マップとピンの初期化
         let map;  // マップ変数をスコープ外で宣言して、他の関数からもアクセス可能に
         let markers = [];  // 既存のピンを管理するための配列
@@ -320,51 +321,61 @@ function displayLeaderboard(entries) {
 
 
 
-        if (collectionName && documentId) {
-            // ドキュメントが指定されている場合、そのドキュメントを取得
-            db.collection(collectionName).doc(documentId)
-                .get()
-                .then(doc => {
-                    if (doc.exists) {
-                        const data = doc.data();
-                        displaySummary(data);
-                        const coordinates = [];
+    if (collectionName && (documentId || profileUrl)) {
+        let docRefPromise;
 
-                        // roundsが存在するか確認
-                        if (data.rounds && Array.isArray(data.rounds)) {
-                            data.rounds.forEach(round => {
-                                const coordinate = round.answer?.coordinateAnswerPayload?.coordinate;
-                                if (coordinate) {
-                                    coordinates.push({
-                                        lat: coordinate.lat,
-                                        lng: coordinate.lng,
-                                        streetViewLink: `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${coordinate.lat},${coordinate.lng}`
-                                    });
-                                }
+        if (documentId) {
+            docRefPromise = db.collection(collectionName).doc(documentId).get();
+        } else {
+            docRefPromise = db.collection(collectionName)
+                .where("geoguessr_profile_url", "==", profileUrl)
+                .limit(1)
+                .get()
+                .then(snapshot => {
+                    if (!snapshot.empty) {
+                        return snapshot.docs[0];
+                    } else {
+                        throw new Error("該当ユーザーのドキュメントが見つかりません。");
+                    }
+                });
+        }
+
+        docRefPromise.then(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                displaySummary(data);
+
+                const coordinates = [];
+                if (Array.isArray(data.rounds)) {
+                    data.rounds.forEach(round => {
+                        const coord = round.answer?.coordinateAnswerPayload?.coordinate;
+                        if (coord) {
+                            coordinates.push({
+                                lat: coord.lat,
+                                lng: coord.lng,
+                                streetViewLink: `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${coord.lat},${coord.lng}`
                             });
                         }
+                    });
+                }
 
-                        // マップにピンを表示
-                        initMap(coordinates);
+                initMap(coordinates);
 
-                        // topPlayersが存在するか確認
-                        if (Array.isArray(data.topPlayers)) {
-                            const entries = data.topPlayers;
-                            displayLeaderboard(entries);
-                        } else {
-                            document.getElementById('leaderboardEntries').textContent = 'リーダーボードはありません。';
-                        }
-                    } else {
-                        alert('指定されたドキュメントは存在しません。');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching document: ', error);
-                    alert('ドキュメントの取得中にエラーが発生しました。');
-                });
-        } else {
-            alert('コレクション名またはドキュメントIDが指定されていません。');
-        }
+                if (Array.isArray(data.topPlayers)) {
+                    displayLeaderboard(data.topPlayers);
+                } else {
+                    document.getElementById('leaderboardEntries').textContent = 'リーダーボードはありません。';
+                }
+            } else {
+                alert('ドキュメントが存在しません。');
+            }
+        }).catch(err => {
+            console.error(err);
+            alert('データ取得エラー：' + err.message);
+        });
+    } else {
+        alert('URLに collection と document または url を指定してください。');
+    }
     </script>
     <script>
         // カスタムコンテキストメニューの作成
@@ -401,21 +412,11 @@ function displayLeaderboard(entries) {
                 map: map,
                 title: `Lat: ${lat}, Lng: ${lng}`
             });
+        
             marker.addListener('click', () => {
                 window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
             });
-            // **モバイルの長押しを検知**
-            let touchTimer;
-            marker.addListener('touchstart', (event) => {
-                touchTimer = setTimeout(() => {
-                    showContextMenu(event.domEvent.touches[0].clientX, event.domEvent.touches[0].clientY, lat, lng);
-                }, 500); // 0.5秒以上押したらメニュー表示
-            });
         
-            marker.addListener('touchend', () => {
-                clearTimeout(touchTimer); // 指を離したらキャンセル
-            });
-            
             marker.addListener('rightclick', (event) => {
                 contextMenu.innerHTML = '';
                 contextMenu.appendChild(createMenuItem('リンクをコピーする', () => {
@@ -453,30 +454,7 @@ function displayLeaderboard(entries) {
         
             return marker;
         }
-        // **コンテキストメニュー表示関数**
-        function showContextMenu(x, y, lat, lng) {
-            contextMenu.innerHTML = '';
-            contextMenu.appendChild(createMenuItem('リンクをコピーする', () => {
-                navigator.clipboard.writeText(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`);
-            }));
-            contextMenu.appendChild(createMenuItem('座標をコピーする', () => {
-                navigator.clipboard.writeText(`${lat},${lng}`);
-            }));
-            contextMenu.appendChild(createMenuItem('地理院地図で見る', () => {
-                window.open(`https://maps.gsi.go.jp/#15/${lat}/${lng}/&base=std`, '_blank');
-            }));
-            contextMenu.appendChild(createMenuItem('Yahoo! マップで見る', () => {
-                window.open(`https://map.yahoo.co.jp/?lat=${lat}&lon=${lng}&zoom=14`, '_blank');
-            }));
-            contextMenu.appendChild(createMenuItem('Open Street Map で見る', () => {
-                window.open(`https://www.openstreetmap.org/#map=15/${lat}/${lng}`, '_blank');
-            }));
-        
-            // **コンテキストメニューを指定位置に表示**
-            contextMenu.style.left = `${x}px`;
-            contextMenu.style.top = `${y}px`;
-            contextMenu.style.display = 'block';
-        }
+
     
         // クリック時にメニューを閉じる
         document.addEventListener('click', () => {
