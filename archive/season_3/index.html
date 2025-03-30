@@ -18,74 +18,81 @@
   <div id="matches-table"></div>
   <div id="nm-table"></div>
   <div id="nmpz-table"></div>
-  <div class="chart-container">
-    <canvas id="matchesChart"></canvas>
-  </div>
-  <div class="chart-container">
-    <canvas id="nmChart"></canvas>
-  </div>
-  <div class="chart-container">
-    <canvas id="nmpzChart"></canvas>
-  </div>
+  <div class="chart-container"><canvas id="matchesChart"></canvas></div>
+  <div class="chart-container"><canvas id="nmChart"></canvas></div>
+  <div class="chart-container"><canvas id="nmpzChart"></canvas></div>
 
   <script>
     // Firebase initialization
     firebase.initializeApp({
-	      apiKey: 'AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4',
-        projectId: 'mido-96308',
+      apiKey: 'AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4',
+      projectId: 'mido-96308',
     });
+
     const db = firebase.firestore();
 
-    // Retrieve document ID from URL
     const urlParams = new URLSearchParams(window.location.search);
-    const docId = urlParams.get('id'); // Use ?id=documentId in URL
+    const docId = urlParams.get('id');    // ?id=ドキュメントID
+    const profileUrl = urlParams.get('url'); // ?url=https://www.geoguessr.com/user/...
 
-    if (docId) {
-      db.collection("matches_season_3").doc(docId).get().then((doc) => {
-        if (doc.exists) {
-          const data = doc.data();
+    function renderDocument(doc) {
+      if (!doc.exists) {
+        alert("ドキュメントが存在しません。");
+        return;
+      }
 
-          // Set name with profile link
-          document.getElementById("name").innerHTML = `<a href="${data.geoguessr_profile_url}" target="_blank">${data.name}</a>`;
+      const data = doc.data();
+      document.getElementById("name").innerHTML = `<a href="${data.geoguessr_profile_url}" target="_blank">${data.name}</a>`;
 
-          // Render tables for each category
-          createTable("matches-table", data.matches, "Move");
-          createTable("nm-table", data.nm, "NM");
-          createTable("nmpz-table", data.nmpz, "NMPZ");
+      createTable("matches-table", data.matches, "Move");
+      createTable("nm-table", data.nm, "NM");
+      createTable("nmpz-table", data.nmpz, "NMPZ");
 
-          // Render line charts
-          createLineChart("matchesChart", data.matches, "Move Score Change");
-          createLineChart("nmChart", data.nm, "NM Score Change");
-          createLineChart("nmpzChart", data.nmpz, "NMPZ Score Change");
-
-        } else {
-          alert("Document not found!");
-        }
-      }).catch((error) => {
-        console.error("Error fetching document: ", error);
-      });
-    } else {
-      alert("No document ID specified in URL.");
+      createLineChart("matchesChart", data.matches, "Move Score Change");
+      createLineChart("nmChart", data.nm, "NM Score Change");
+      createLineChart("nmpzChart", data.nmpz, "NMPZ Score Change");
     }
 
-    // Function to create tables
+    if (docId) {
+      db.collection("matches_season_3").doc(docId).get()
+        .then(renderDocument)
+        .catch(err => {
+          console.error("Firestore エラー:", err);
+          alert("データ取得中にエラーが発生しました。");
+        });
+    } else if (profileUrl) {
+      db.collection("matches_season_2")
+        .where("geoguessr_profile_url", "==", profileUrl)
+        .limit(1)
+        .get()
+        .then(snapshot => {
+          if (!snapshot.empty) {
+            renderDocument(snapshot.docs[0]);
+          } else {
+            alert("指定されたプロフィールURLのドキュメントが見つかりません。");
+          }
+        })
+        .catch(err => {
+          console.error("Firestore エラー:", err);
+          alert("データ取得中にエラーが発生しました。");
+        });
+    } else {
+      alert("URLパラメータに id または url を指定してください。");
+    }
+
     function createTable(elementId, data, title) {
-      // Calculate win/loss counts and win percentage
       const winCount = data.filter(item => item.result === "win").length;
       const lossCount = data.filter(item => item.result === "loss").length;
-      const winPercentage = ((winCount / (data.length - 1) ) * 100).toFixed(1); // 勝率計算（小数点1位）
+      const winPercentage = ((winCount / (data.length - 1)) * 100).toFixed(1);
 
-      // テーブルの先頭に勝率と勝敗数を表示
       let html = `<h2>${title}</h2><p>Win Rate: ${winPercentage}% | Win: ${winCount}, Loss: ${lossCount}</p>`;
       html += `<table><tr><th>Opponent</th><th>Result</th><th>Score</th><th>URL</th></tr>`;
 
       data.forEach(item => {
-        // URLが `http://example.com/` の場合は非表示
         const urls = (item.url || [])
           .filter(url => url !== "http://example.com")
           .map(url => `<a href="${url}" target="_blank">Link</a>`)
           .join(", ");
-
         html += `<tr><td>${item.opponent}</td><td>${item.result}</td><td>${item.score}</td><td>${urls}</td></tr>`;
       });
 
@@ -93,9 +100,6 @@
       document.getElementById(elementId).innerHTML = html;
     }
 
-
-
-    // Function to create line charts for score change
     function createLineChart(elementId, data, label) {
       const scores = data.map(item => item.score);
       const labels = data.map((_, index) => `Match ${index + 1}`);
@@ -128,4 +132,3 @@
   </script>
 </body>
 </html>
-
