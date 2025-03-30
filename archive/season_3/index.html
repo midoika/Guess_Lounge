@@ -61,7 +61,7 @@
           alert("データ取得中にエラーが発生しました。");
         });
     } else if (profileUrl) {
-      db.collection("matches_season_2")
+      db.collection("matches_season_3")
         .where("geoguessr_profile_url", "==", profileUrl)
         .limit(1)
         .get()
