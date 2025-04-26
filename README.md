@@ -1,5 +1,5 @@
 # Guess_Lounge
-- シーズン0のリザルト[https://midoika.github.io/Guess_Lounge/archive/season_0/docs/html/index.html](https://midoika.github.io/Guess_Lounge/archive/season_0/docs/html/index.html)
+- [シーズン0のリザルト](https://midoika.github.io/Guess_Lounge/archive/season_0/docs/html/index.html)
 - リアルタイム戦績一覧表示[https://midoika.github.io/Guess_Lounge/archive/season_3/?url=https://www.geoguessr.com/user/641afdb2233ca9dbb83b0fc9](https://midoika.github.io/Guess_Lounge/archive/season_3/?url=https://www.geoguessr.com/user/641afdb2233ca9dbb83b0fc9)
   - 自身のGuess Loungeのリアルタイム戦績を表示する場合は「=」以降を自分のDiscord user IDにしてください。
 - プロフィールURLの登録方法 [https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url](https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url)
