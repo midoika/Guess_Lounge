@@ -1,6 +1,6 @@
 # Guess_Lounge
 - [シーズン0のリザルト](https://midoika.github.io/Guess_Lounge/archive/season_0/docs/html/index.html)
-- [リアルタイム戦績一覧表示](https://midoika.github.io/Guess_Lounge/archive/search)
+- [戦績一覧検索](https://midoika.github.io/Guess_Lounge/archive/search)
 - プロフィールURLの登録方法 [https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url](https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url)
 
 # 🇯🇵
