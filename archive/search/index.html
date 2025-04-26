@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Guess Lounge Archive ジャンプ</title>
+</head>
+<body>
+  <h1>Guess Lounge Archive ジャンプ</h1>
+
+  <label for="season">シーズンを選んでください:</label>
+  <select id="season">
+    <option value="season_2">Season 2</option>
+    <option value="season_3">Season 3</option>
+  </select>
+
+  <br><br>
+
+  <label for="idInput">IDを入力:</label>
+  <input type="text" id="idInput" placeholder="IDを入力（数字）">
+
+  <br><br>
+
+  <label for="urlInput">URLを入力:</label>
+  <input type="text" id="urlInput" placeholder="URLを入力（https://...）">
+
+  <br><br>
+
+  <button onclick="jump()">ジャンプする（新しいタブ）</button>
+  <button onclick="clearInputs()">クリア</button>
+
+  <p id="errorMessage" style="color: red;"></p>
+
+  <script>
+    function jump() {
+      const season = document.getElementById('season').value;
+      const id = document.getElementById('idInput').value.trim();
+      const url = document.getElementById('urlInput').value.trim();
+      const errorMessage = document.getElementById('errorMessage');
+
+      // エラーメッセージリセット
+      errorMessage.textContent = '';
+
+      if (id && url) {
+        errorMessage.textContent = 'IDとURLを同時に入力しないでください。';
+        return;
+      }
+
+      if (!id && !url) {
+        errorMessage.textContent = 'IDかURLをどちらか一方入力してください。';
+        return;
+      }
+
+      let destination = `https://midoika.github.io/Guess_Lounge/archive/${season}/`;
+
+      if (id) {
+        destination += `?id=${encodeURIComponent(id)}`;
+      } else if (url) {
+        destination += `?url=${encodeURIComponent(url)}`;
+      }
+
+      // 新しいタブで開く
+      window.open(destination, '_blank');
+    }
+
+    function clearInputs() {
+      document.getElementById('idInput').value = '';
+      document.getElementById('urlInput').value = '';
+      document.getElementById('errorMessage').textContent = '';
+    }
+  </script>
+</body>
+</html>
