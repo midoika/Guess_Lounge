@@ -6,24 +6,24 @@
 </head>
 <body>
   <h1>Guess Lounge Archive Search Box</h1>
-
-  <label for="season">シーズンを選んでください:</label>
+  <h3>1. Seasonを選んで下さい</h3>
+  <a href="https://midoika.github.io/Guess_Lounge/archive/season_0/docs/html/index.html">Season 0</a>
+  <label for="season">Season from 2 to 3:</label>
   <select id="season">
     <option value="season_2">Season 2</option>
     <option value="season_3">Season 3</option>
   </select>
 
   <br><br>
-  <h2>以下のいずれかを入力</h2>
+  <h3>2. 以下のいずれかを入力</h3>
 
-  <br><br>
-
+  <br>
   <label for="idInput">Discord User IDを入力:</label>
   <input type="text" id="idInput" placeholder="IDを入力（数字）">
 
   <br><br>
 
-  <label for="urlInput">URLを入力:</label>
+  <label for="urlInput"><a href="https://www.geoguessr.com/me/profile">GeoGuessr Profile URL</a>を入力:</label>
   <input type="text" id="urlInput" placeholder="URLを入力（https://...）">
 
   <br><br>
@@ -32,8 +32,7 @@
   <button onclick="clearInputs()">クリア</button>
 
   <p id="errorMessage" style="color: red;"></p>
-  <br><br>
-  <a href="https://midoika.github.io/Guess_Lounge/archive/season_0/docs/html/index.html">シーズン0</a>
+
 
   <script>
     function jump() {
