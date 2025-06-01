@@ -89,7 +89,7 @@
         const params = new URLSearchParams(window.location.search);
         const collectionName = params.get('collection');
         const documentId = params.get('document');
-
+        const initialLanguage = 'ja'; // デフォルトは日本語
         // mapとmarker管理
         let map, markers = [];
         let activeMarkers = {}, activePolylines = {};
@@ -100,7 +100,7 @@
             let center = (coordinates.length > 0) ? [coordinates[0].lng, coordinates[0].lat] : [139.6917, 35.6895];
             map = new mapboxgl.Map({
                 container: 'map',
-                style: 'mapbox://styles/mapbox/streets-v12?language=zh-Hans',
+                style: 'mapbox://styles/mapbox/streets-v11?language=ja',
                 center: center,
                 zoom: 5,
                 attributionControl: false
