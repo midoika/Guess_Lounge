@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>live challenge archiver (Mapbox版)</title>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+    <style>
+        #summary {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+        }
+        #map {
+            height: 500px;
+            width: 95%;
+            margin: auto;
+        }
+        #leaderboard {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+        }
+        .player {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+        #customContextMenu {
+            position: absolute;
+            display: none;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 5px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <h3>保存版 Live challenge result</h3>
+    <div id="summary"><div id="summaryContent"></div></div>
+    <div id="map"></div>
+    <div id="leaderboard">
+        <h4>リーダーボード (点数クリックでゲス地点へズームする。Click scores to zoom in the places they guessed.)</h4>
+        <h4>(📍右クリックで他のマップで見る。Right-click map pin and choose other maps.)</h4>
+        <div id="leaderboardEntries"></div>
+    </div>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-firestore.js"></script>
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoibWlkb2lrYSIsImEiOiJjbWJkMWphdXcyMG96MnFvazRxMGJpbTY4In0.3NrJHptVZSItqmRDrGdFNA'; // ←ここを自分のトークンに変更
+
+        // context menu
+        const contextMenu = document.createElement('div');
+        contextMenu.id = 'customContextMenu';
+        document.body.appendChild(contextMenu);
+
+        function createMenuItem(text, onClick) {
+            const item = document.createElement('div');
+            item.textContent = text;
+            item.style.padding = '5px 10px';
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', () => {
+                onClick();
+                contextMenu.style.display = 'none';
+            });
+            item.addEventListener('mouseover', () => item.style.background = '#ddd');
+            item.addEventListener('mouseout', () => item.style.background = '');
+            return item;
+        }
+
+        // --- Firebase初期化 ---
+        firebase.initializeApp({
+            apiKey: 'AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4',
+            projectId: 'mido-96308',
+        });
+        const db = firebase.firestore();
+
+        // URLのクエリパラメータ取得
+        const params = new URLSearchParams(window.location.search);
+        const collectionName = params.get('collection');
+        const documentId = params.get('document');
+        const initialLanguage = 'ja'; // デフォルトは日本語
+        // mapとmarker管理
+        let map, markers = [];
+        let activeMarkers = {}, activePolylines = {};
+
+        // マップの初期化
+        function initMap(coordinates) {
+            // 初期座標
+            let center = (coordinates.length > 0) ? [coordinates[0].lng, coordinates[0].lat] : [139.6917, 35.6895];
+            map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/streets-v12?language=ja',
+                center: center,
+                zoom: 5,
+                attributionControl: false
+            });
+
+            // 地図の全ピン削除
+            markers.forEach(marker => marker.remove());
+            markers = [];
+
+            // 座標ごとにピン設置
+            coordinates.forEach((coord, idx) => {
+                const marker = addMarkerWithContextMenu(coord.lat, coord.lng, idx + 1);
+                markers.push(marker);
+            });
+
+            // 全ピンが入るようにズーム
+            if (coordinates.length > 0) {
+                const bounds = new mapboxgl.LngLatBounds();
+                coordinates.forEach(c => bounds.extend([c.lng, c.lat]));
+                map.fitBounds(bounds, {padding: 50});
+            }
+        }
+
+        // Context menuピン
+        function addMarkerWithContextMenu(lat, lng, labelText) {
+            // ラベル付きピン
+            const el = document.createElement('div');
+            el.style.background = '#4682b4';
+            el.style.borderRadius = '50%';
+            el.style.color = '#fff';
+            el.style.width = '32px';
+            el.style.height = '32px';
+            el.style.display = 'flex';
+            el.style.justifyContent = 'center';
+            el.style.alignItems = 'center';
+            el.style.fontWeight = 'bold';
+            el.style.fontSize = '16px';
+            el.style.cursor = 'pointer';
+            el.textContent = labelText;
+
+            const marker = new mapboxgl.Marker({element: el})
+                .setLngLat([lng, lat])
+                .addTo(map);
+
+            // 左クリック＝ストリートビュー（Google）
+            el.addEventListener('click', () => {
+                window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
+            });
+
+            // 右クリック＝カスタムメニュー
+            el.addEventListener('contextmenu', (event) => {
+                event.preventDefault();
+                contextMenu.innerHTML = '';
+                contextMenu.appendChild(createMenuItem('リンクをコピーする', () => {
+                    navigator.clipboard.writeText(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`);
+                }));
+                contextMenu.appendChild(createMenuItem('座標をコピーする', () => {
+                    navigator.clipboard.writeText(`${lat},${lng}`);
+                }));
+                contextMenu.appendChild(createMenuItem('地理院地図で見る', () => {
+                    window.open(`https://maps.gsi.go.jp/#15/${lat}/${lng}`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('むかしの市町村境界マップで見る', () => {
+                    window.open(`https://hanishina.net/maps/historymap.html?y=${lat}&x=${lng}&z=12`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('Yahoo! マップで見る', () => {
+                    window.open(`https://map.yahoo.co.jp/?lat=${lat}&lon=${lng}&zoom=14`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('Open Street Map で見る', () => {
+                    window.open(`https://www.openstreetmap.org/#map=15/${lat}/${lng}`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('Appleマップ (β) で見る', () => {
+                    window.open(`https://beta.maps.apple.com/?ll=${lat}%2c${lng}`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('マピオンで見る', () => {
+                    window.open(`https://www.mapion.co.jp/m2/${lat},${lng},15`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('MapFanで見る', () => {
+                    window.open(`https://mapfan.com/map?c=${lat},${lng},15`, '_blank');
+                }));
+                // マウス位置に表示
+                contextMenu.style.left = `${event.clientX + 10}px`;
+                contextMenu.style.top = `${event.clientY}px`;
+                contextMenu.style.display = 'block';
+            });
+
+            return marker;
+        }
+
+        // ゲス用：アバターピンをマップにトグル設置
+        function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
+            if (!activeMarkers[roundNumber]) activeMarkers[roundNumber] = {};
+            if (!activePolylines[roundNumber]) activePolylines[roundNumber] = {};
+
+            if (activeMarkers[roundNumber][avatarUrl]) {
+                activeMarkers[roundNumber][avatarUrl].remove();
+                delete activeMarkers[roundNumber][avatarUrl];
+                if (activePolylines[roundNumber][avatarUrl]) {
+                    map.removeLayer(activePolylines[roundNumber][avatarUrl]);
+                    map.removeSource(activePolylines[roundNumber][avatarUrl]);
+                    delete activePolylines[roundNumber][avatarUrl];
+                }
+                return false;
+            } else {
+                // カスタムアバター
+                const el = document.createElement('img');
+                el.src = avatarUrl;
+                el.style.width = '40px';
+                el.style.height = '40px';
+                el.style.borderRadius = '50%';
+                el.style.border = '2px solid yellowgreen';
+                el.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+                el.style.cursor = 'pointer';
+
+                const marker = new mapboxgl.Marker({element: el})
+                    .setLngLat([lng, lat])
+                    .addTo(map);
+
+                el.addEventListener('click', () => {
+                    window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
+                });
+
+                activeMarkers[roundNumber][avatarUrl] = marker;
+                map.flyTo({center: [lng, lat], zoom: 12});
+
+                // 点線（ラウンドの座標→ゲス座標）
+                if (markers[roundNumber - 1]) {
+                    // ラウンドピン位置
+                    const m = markers[roundNumber - 1].getLngLat();
+                    const lineId = `poly-${roundNumber}-${avatarUrl}`;
+                    map.addSource(lineId, {
+                        'type': 'geojson',
+                        'data': {
+                            'type': 'Feature',
+                            'geometry': {
+                                'type': 'LineString',
+                                'coordinates': [
+                                    [m.lng, m.lat], [lng, lat]
+                                ]
+                            }
+                        }
+                    });
+                    map.addLayer({
+                        'id': lineId,
+                        'type': 'line',
+                        'source': lineId,
+                        'layout': {'line-cap': 'round'},
+                        'paint': {
+                            'line-color': '#000',
+                            'line-width': 2,
+                            'line-dasharray': [2,2]
+                        }
+                    });
+                    activePolylines[roundNumber][avatarUrl] = lineId;
+                }
+                return true;
+            }
+        }
+
+        // --- 以下、リーダーボード・サマリー・FireStore読み込み処理（元のまま） ---
+        function displaySummary(data) {
+            const summaryContent = document.getElementById('summaryContent');
+            const firstRound = data.rounds[0];
+            if (firstRound) {
+                const startTime = new Date(firstRound.startTime).toLocaleString();
+                const roundTime = firstRound.roundTime;
+                const movementOptions = firstRound.question?.panoramaQuestionPayload?.movementOptions || {};
+                const mapName = firstRound.question?.panoramaQuestionPayload?.mapName || '不明';
+                const mapSlug = firstRound.question?.panoramaQuestionPayload?.mapSlug || '不明';
+                summaryContent.innerHTML = `
+                    <p>Start: ${startTime}   time: ${roundTime}s   ${movementOptions.forbidMoving ? 'No Move ' : 'Move '}, 
+                    ${movementOptions.forbidRotating ? 'No Pan ' : 'Pan '},
+                    ${movementOptions.forbidZooming ? 'No zoom ' : 'Zoom '}</p>
+                    <p>Map: <a href="https://www.geoguessr.com/maps/${mapSlug}" target="_blank">${mapName}</a></p>
+                `;
+            } else {
+                summaryContent.textContent = 'ラウンド情報が見つかりません。';
+            }
+        }
+
+        function displayLeaderboard(entries) {
+            const leaderboardContainer = document.getElementById('leaderboardEntries');
+            leaderboardContainer.innerHTML = '';
+            entries.forEach((entry, index) => {
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'player';
+                const rankSpan = document.createElement('span');
+                let rankText = '';
+                if (index === 0)      rankText = '1st';
+                else if (index === 1) rankText = '2nd';
+                else if (index === 2) rankText = '3rd';
+                else                  rankText = `${index + 1}th`;
+                rankSpan.textContent = rankText + ' ';
+                rankSpan.className = 'rank';
+                const avatar = document.createElement('img');
+                avatar.src = "https://www.geoguessr.com/images/plain/" + entry.avatarPath;
+                avatar.className = 'avatar';
+                const nameAndScore = document.createElement('div');
+                const nameLink = document.createElement('a');
+                nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;
+                nameLink.textContent = entry.name;
+                nameLink.className = 'name-link';
+                nameAndScore.appendChild(nameLink);
+                const scoreAndTimeSpan = document.createElement('span');
+                scoreAndTimeSpan.style.cursor = 'pointer';
+                scoreAndTimeSpan.textContent = `: ${entry.totalScore}pts (${entry.totalTime}s)`;
+                scoreAndTimeSpan.addEventListener('click', () => {
+                    const scores = playerDiv.querySelectorAll('.round-score');
+                    scores.forEach(score => score.click());
+                    const bounds = new mapboxgl.LngLatBounds();
+                    entry.guesses.forEach(guess => {
+                        if (guess.lat && guess.lng)
+                            bounds.extend([guess.lng, guess.lat]);
+                    });
+                    map.fitBounds(bounds, {padding: 50});
+                });
+                nameAndScore.appendChild(scoreAndTimeSpan);
+                const equalsSpan = document.createElement('span');
+                equalsSpan.textContent = ' = ';
+                nameAndScore.appendChild(equalsSpan);
+                const roundScores = document.createElement('span');
+                roundScores.className = 'round-scores';
+                entry.guesses.forEach(guess => {
+                    const roundScore = document.createElement('span');
+                    roundScore.textContent = ` R${guess.roundNumber}: ${guess.score}pts`;
+                    const timeSpan = document.createElement('span');
+                    timeSpan.textContent = `(${guess.time}s) `;
+                    timeSpan.style.fontSize = 'smaller';
+                    roundScore.appendChild(timeSpan);
+                    roundScore.className = 'round-score';
+                    roundScore.addEventListener('click', () => {
+                        const result = toggleMarkerWithAvatar(guess.lat, guess.lng, avatar.src, guess.roundNumber);
+                        if (result)   roundScore.style.color = 'yellowgreen';
+                        else          roundScore.style.color = '';
+                    });
+                    roundScores.appendChild(roundScore);
+                });
+                playerDiv.appendChild(rankSpan);
+                playerDiv.appendChild(avatar);
+                playerDiv.appendChild(nameAndScore);
+                playerDiv.appendChild(roundScores);
+                leaderboardContainer.appendChild(playerDiv);
+            });
+        }
+
+        // Mapboxは初期化時にコールバック不要なので、Firestore→initMap
+        if (collectionName && documentId) {
+            db.collection(collectionName).doc(documentId)
+                .get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        displaySummary(data);
+                        const coordinates = [];
+                        if (data.rounds && Array.isArray(data.rounds)) {
+                            data.rounds.forEach(round => {
+                                const coordinate = round.answer?.coordinateAnswerPayload?.coordinate;
+                                if (coordinate) {
+                                    coordinates.push({
+                                        lat: coordinate.lat,
+                                        lng: coordinate.lng,
+                                        streetViewLink: `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${coordinate.lat},${coordinate.lng}`
+                                    });
+                                }
+                            });
+                        }
+                        initMap(coordinates);
+                        if (Array.isArray(data.topPlayers)) {
+                            displayLeaderboard(data.topPlayers);
+                        } else {
+                            document.getElementById('leaderboardEntries').textContent = 'リーダーボードはありません。';
+                        }
+                    } else {
+                        alert('指定されたドキュメントは存在しません。');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching document: ', error);
+                    alert('ドキュメントの取得中にエラーが発生しました。');
+                });
+        } else {
+            alert('コレクション名またはドキュメントIDが指定されていません。');
+        }
+        document.addEventListener('click', () => {
+        contextMenu.style.display = 'none';
+    });
+
+</script>
+<script>
+    // カスタムコンテキストメニューの作成
+const contextMenu = document.createElement('div');
+contextMenu.id = 'customContextMenu';
+contextMenu.style.position = 'absolute';
+contextMenu.style.display = 'none';
+contextMenu.style.background = '#fff';
+contextMenu.style.border = '1px solid #ccc';
+contextMenu.style.padding = '5px';
+contextMenu.style.boxShadow = '2px 2px 10px rgba(0, 0, 0, 0.2)';
+contextMenu.style.zIndex = '1000';
+document.body.appendChild(contextMenu);
+
+// メニュー項目の作成
+function createMenuItem(text, onClick) {
+    const item = document.createElement('div');
+    item.textContent = text;
+    item.style.padding = '5px 10px';
+    item.style.cursor = 'pointer';
+    item.addEventListener('click', () => {
+        onClick();
+        contextMenu.style.display = 'none';
+    });
+    item.addEventListener('mouseover', () => item.style.background = '#ddd');
+    item.addEventListener('mouseout', () => item.style.background = '');
+    return item;
+}
+
+// ピンの右クリックイベントにコンテキストメニューを追加
+function addMarkerWithContextMenu(lat, lng, labelText) {
+    const el = document.createElement('div');
+    el.style.background = '#4682b4';
+    el.style.borderRadius = '50%';
+    el.style.color = '#fff';
+    el.style.width = '32px';
+    el.style.height = '32px';
+    el.style.display = 'flex';
+    el.style.justifyContent = 'center';
+    el.style.alignItems = 'center';
+    el.style.fontWeight = 'bold';
+    el.style.fontSize = '16px';
+    el.style.cursor = 'pointer';
+    el.textContent = labelText;
+
+    const marker = new mapboxgl.Marker({ element: el })
+        .setLngLat([lng, lat])
+        .addTo(map);
+
+    // ストリートビューリンク
+    el.addEventListener('click', () => {
+        window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
+    });
+
+    el.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        contextMenu.innerHTML = '';
+        contextMenu.appendChild(createMenuItem('リンクをコピーする', () => {
+            navigator.clipboard.writeText(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`);
+        }));
+        contextMenu.appendChild(createMenuItem('座標をコピーする', () => {
+            navigator.clipboard.writeText(`${lat},${lng}`);
+        }));
+        contextMenu.appendChild(createMenuItem('地理院地図で見る', () => {
+            window.open(`https://maps.gsi.go.jp/#15/${lat}/${lng}`, '_blank');
+        }));
+        contextMenu.appendChild(createMenuItem('むかしの市町村境界マップで見る', () => {
+            window.open(`https://hanishina.net/maps/historymap.html?y=${lat}&x=${lng}&z=12`, '_blank');
+        }));
+        contextMenu.appendChild(createMenuItem('Yahoo! マップで見る', () => {
+            window.open(`https://map.yahoo.co.jp/?lat=${lat}&lon=${lng}&zoom=14`, '_blank');
+        }));
+        contextMenu.appendChild(createMenuItem('Open Street Map で見る', () => {
+            window.open(`https://www.openstreetmap.org/#map=15/${lat}/${lng}`, '_blank');
+        }));
+        contextMenu.appendChild(createMenuItem('Appleマップ (β) で見る', () => {
+            window.open(`https://beta.maps.apple.com/?ll=${lat}%2c${lng}`, '_blank');
+        }));
+        contextMenu.appendChild(createMenuItem('マピオンで見る', () => {
+            window.open(`https://www.mapion.co.jp/m2/${lat},${lng},15`, '_blank');
+        }));
+        contextMenu.appendChild(createMenuItem('MapFanで見る', () => {
+            window.open(`https://mapfan.com/map?c=${lat},${lng},15`, '_blank');
+        }));
+
+        contextMenu.style.left = `${event.clientX + 10}px`;
+        contextMenu.style.top = `${event.clientY}px`;
+        contextMenu.style.display = 'block';
+    });
+
+    return marker;
+}
+
+// クリック時にメニューを閉じる
+document.addEventListener('click', () => {
+    contextMenu.style.display = 'none';
+});
+
+</script>
