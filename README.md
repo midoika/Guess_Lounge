@@ -5,7 +5,7 @@
 
 # 🇯🇵
 ## 登録 (@マルチ募集、@Guess Lounge Player 、モデレーター)
-###  #⑥-✅参加登録 で登録して下さい。ただし名前は`_`と`.`が消えます。
+###  [#⑥-✅参加登録](https://discord.com/channels/956620253603967006/1261681629739356273) で登録して下さい。ただし名前は`_`と`.`が消えます。
 - 登録後、 @Guess Lounge Player  が自動付与されます。
 - DMでyohe から登録完了案内が届きます。
 ## 退会（管理者のみ）
@@ -39,10 +39,8 @@
 - 試合結果のurlを貼り付けると自動に勝敗判定してくれます。
   - アプリの方はPC勢の方に、かわりに入力してもらって下さい。
 - ミスがあれば、`/nogame`コマンドをお使いください。メッセージ削除はデータに反映されません！
-- **`/duelurl`コマンドを使う前に、両者の GeoGuessr Profile URLが必要** です。 @yohe#6047 に `$profileurl`で登録して下さい。
-https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url
+
 ```
-$profileurl https://www.geoguessr.com/user/~
 /duelurl https://www.geoguessr.com/results/OTBuTnHfJoR1qSOD
 ```
 
@@ -91,11 +89,8 @@ $profileurl https://www.geoguessr.com/user/~
 # 3. Match Registration ( @Guess Lounge Player, moderator)
 ## `/duelurl` 
 - Input game breakdown URLs and judge win & loss automatically.
-- Both of GeoGuessr profile URL are required.
-https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url
 
 ```
-$profileurl https://www.geoguessr.com/user/~
 /duelurl https://www.geoguessr.com/results/aaa
 ```
 
