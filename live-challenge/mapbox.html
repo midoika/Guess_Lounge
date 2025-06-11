@@ -472,7 +472,9 @@ function addMarkerWithContextMenu(lat, lng, labelText) {
         contextMenu.appendChild(createMenuItem('MapFanで見る', () => {
             window.open(`https://mapfan.com/map?c=${lat},${lng},15`, '_blank');
         }));
-
+        contextMenu.appendChild(createMenuItem('Bing マップで見る', () => {
+            window.open(`https://www.bing.com/maps?cp=${lat}%7E${lng}&lvl=14.2`, '_blank');
+        }));
         contextMenu.style.left = `${event.clientX + 10}px`;
         contextMenu.style.top = `${event.clientY}px`;
         contextMenu.style.display = 'block';
