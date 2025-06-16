@@ -461,11 +461,12 @@ function displayLeaderboard(entries) {
     let meshLines = [];
     let meshLabels = [];
 
-    // 日本測地系 (Tokyo Datum) に変換する関数
-    function toTokyoDatum(lat, lng) {
-        const jLat = lat + 0.00010696 * lat - 0.000017467 * lng - 0.0046020;
-        const jLng = lng + 0.000046047 * lat + 0.000083049 * lng - 0.010041;
-        return { lat: jLat, lng: jLng };
+    // 旧日本測地系から世界測地系 (Tokyo Datum to WGS84) に変換する関数
+    // https://haiden.sakura.ne.jp/sp/geodetic-conv.php
+    function toTokyoDatum(jlat, jlng) {
+        const Lat = jlat - 0.00010695 * jlat + 0.000017464 * jlng + 0.0046017;
+        const Lng = jlng - 0.000046038 * jlat - 0.000083043 * jlng + 0.010040;
+        return { lat: Lat, lng: Lng };
     }
 
     // メッシュ表示の切り替え
