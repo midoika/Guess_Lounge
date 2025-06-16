@@ -481,13 +481,13 @@ function displayLeaderboard(entries) {
             document.getElementById('toggleMeshButton').textContent = 'hidden Hokkaido Mesh';
         } else {
             clearHokkaidoMesh();
-            document.getElementById('toggleMeshButton').textContent = 'Show';
+            document.getElementById('toggleMeshButton').textContent = 'Show Hokkaido Mesh';
         }
     });
 
     function drawHokkaidoMesh() {
-        const startLat = 41.3;
-        const endLat = 45.6;
+        const startLat = 41 + 1 / 3;
+        const endLat = 45.7;
         const startLng = 139.0;
         const endLng = 146.0;
 
