@@ -519,9 +519,8 @@ function displayLeaderboard(entries) {
                     meshLines.push(line);
                 });
 
-                // 修正: 図番号の左下を30に揃える
-                // 実際にはrow=0,col=0が30、それより北へ行くほど+10、東へ行くほど+1
-                const meshNumber = (row * 10 + (col + 9) % 10).toString();
+                // 函館は30、札幌は41
+                const meshNumber = (20 + row * 10 + (col + 9) % 10).toString();
 
                 const label = new google.maps.Marker({
                     position: { lat: (sw.lat + ne.lat) / 2, lng: (sw.lng + ne.lng) / 2 },
