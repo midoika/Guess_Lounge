@@ -478,16 +478,16 @@ function displayLeaderboard(entries) {
 
         if (meshVisible) {
             drawHokkaidoMesh();
-            document.getElementById('toggleMeshButton').textContent = '北海道メッシュを非表示';
+            document.getElementById('toggleMeshButton').textContent = 'hidden Hokkaido Mesh';
         } else {
             clearHokkaidoMesh();
-            document.getElementById('toggleMeshButton').textContent = '北海道メッシュを表示';
+            document.getElementById('toggleMeshButton').textContent = 'Show Hokkaido Mesh';
         }
     });
 
     function drawHokkaidoMesh() {
-        const startLat = 41.3;
-        const endLat = 45.6;
+        const startLat = 41 + 1 / 3;
+        const endLat = 45.7;
         const startLng = 139.0;
         const endLng = 146.0;
 
@@ -519,9 +519,12 @@ function displayLeaderboard(entries) {
                     meshLines.push(line);
                 });
 
+                // 函館は30、札幌は41
+                const meshNumber = (20 + row * 10 + (col + 9) % 10).toString();
+
                 const label = new google.maps.Marker({
                     position: { lat: (sw.lat + ne.lat) / 2, lng: (sw.lng + ne.lng) / 2 },
-                    label: `${2 + row}${col}`,
+                    label: meshNumber,
                     icon: {
                         path: google.maps.SymbolPath.CIRCLE,
                         scale: 0,
