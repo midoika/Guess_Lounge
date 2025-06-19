@@ -82,3 +82,4 @@
         meshLabels.forEach(label => label.setMap(null));
         meshLabels = [];
     }
+</script>
