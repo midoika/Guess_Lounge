@@ -31,14 +31,15 @@ function drawHokkaidoMesh() {
     const latStep = 2 / 3; // 約40分（0.6667度）
     const lngStep = 1;     // 1度
 
-    const excluded = new Set([22,24,25,34,35,59,69,60,79,70,73,74,75,89,83,84,85]);
+    const excluded = new Set(['22','24','25','34','35','59','69','60','79','70','73','74','75','89','83','84','85']);
 
     let row = 0;
     for (let lat = startLat; lat < endLat; lat += latStep, row++) {
         let col = 0;
         for (let lng = startLng; lng < endLng; lng += lngStep, col++) {
             const meshNumber = 20 + row * 10 + (col + 9) % 10;
-            if (excluded.has(meshNumber)) continue;
+            const meshStr = meshNumber.toString();
+            if (excluded.has(meshStr)) continue;
 
             const sw = toTokyoDatum(lat, lng);
             const ne = toTokyoDatum(lat + latStep, lng + lngStep);
@@ -63,7 +64,7 @@ function drawHokkaidoMesh() {
 
             const label = new google.maps.Marker({
                 position: { lat: (sw.lat + ne.lat) / 2, lng: (sw.lng + ne.lng) / 2 },
-                label: meshNumber.toString(),
+                label: meshStr,
                 icon: {
                     path: google.maps.SymbolPath.CIRCLE,
                     scale: 0,
