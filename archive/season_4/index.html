@@ -54,14 +54,14 @@
     }
 
     if (docId) {
-      db.collection("matches_season_3").doc(docId).get()
+      db.collection("matches_season_4").doc(docId).get()
         .then(renderDocument)
         .catch(err => {
           console.error("Firestore エラー:", err);
           alert("データ取得中にエラーが発生しました。");
         });
     } else if (profileUrl) {
-      db.collection("matches_season_3")
+      db.collection("matches_season_4")
         .where("geoguessr_profile_url", "==", profileUrl)
         .limit(1)
         .get()
