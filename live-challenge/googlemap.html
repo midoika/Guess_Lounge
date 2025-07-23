@@ -356,6 +356,13 @@ function displayLeaderboard(entries) {
                         // topPlayersが存在するか確認
                         if (Array.isArray(data.topPlayers)) {
                             const entries = data.topPlayers;
+                            // 順位付けのためにソート（合計点が高い順 → 同点なら秒数が少ない順）
+                            entries.sort((a, b) => {
+                                if (b.totalScore !== a.totalScore) {
+                                    return b.totalScore - a.totalScore; // 合計点が高い順
+                                }
+                                return a.totalTime - b.totalTime; // 同点なら秒数が少ない方を上に
+                            });
                             displayLeaderboard(entries);
                         } else {
                             document.getElementById('leaderboardEntries').textContent = 'リーダーボードはありません。';
