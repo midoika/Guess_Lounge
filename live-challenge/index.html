@@ -37,6 +37,12 @@
         }
     </style>
 </head>
+<footer id="source" style="margin-top: 40px; padding: 10px; background-color: #f1f1f1; border-top: 1px solid #ccc; text-align: center;">
+    <small>
+        出典：<a href="https://hanishina.net/maps/historydata.html" target="_blank">市区町村境界データ</a>・<a href="https://www.jstage.jst.go.jp/article/ieejeiss1987/114/2/114_2_118/_pdf/-char/en" target="_blank">北海道電力メッシュデータ(J-Stage)</a>
+    </small>
+</footer>
+
 <body>
     <h3>保存版 Live challenge result</h3>
     <!-- 概要表示エリア -->
@@ -46,6 +52,7 @@
     <div id="map"></div>
     <!-- ✅ メッシュ表示ボタンを追加 -->
         <button id="toggleMeshButton">Hokkaido Mesh</button>
+        <button id="togglePolygonButton">境界表示</button>
     <!-- リーダーボード表示エリア -->
     <div id="leaderboard">
         <h4>リーダーボード (点数クリックでゲス地点へズームする。Click scores to zoom in the places they guessed.)</h4>
@@ -468,7 +475,39 @@ function displayLeaderboard(entries) {
     </script>
     
     <script src="hokkaido/hokuden_mesh.js"></script>
+    <script>
+        let polygonLayer = null; // レイヤーの保持用
+    
+        document.getElementById('togglePolygonButton').addEventListener('click', () => {
+            if (polygonLayer) {
+                polygonLayer.setMap(null);
+                polygonLayer = null;
+                document.getElementById('togglePolygonButton').textContent = '境界表示';
+            } else {
+                fetch('./shikuchoson/polygon_2025.geojson')
+                    .then(response => response.json())
+                    .then(data => {
+                        polygonLayer = new google.maps.Data();
+                        polygonLayer.addGeoJson(data);
+    
+                        polygonLayer.setStyle({
+                        strokeColor: '#0000ff',     // 🔵
+                        strokeWeight: 3,
+                        strokeOpacity: 1.0,
+                        fillColor: '#0000ff',
+                        fillOpacity: 0.0
+                    });
 
+                        polygonLayer.setMap(map);
+                        document.getElementById('togglePolygonButton').textContent = '非表示';
+                    })
+                    .catch(error => {
+                        console.error('GeoJSON の読み込みに失敗しました:', error);
+                        alert('GeoJSON の読み込みに失敗しました。');
+                    });
+            }
+        });
+    </script>
     <!-- Google Maps JavaScript API をロード -->
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw&&region=JP&callback=initMap">
