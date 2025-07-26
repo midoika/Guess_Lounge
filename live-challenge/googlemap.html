@@ -46,6 +46,7 @@
     <div id="map"></div>
     <!-- ✅ メッシュ表示ボタンを追加 -->
         <button id="toggleMeshButton">Hokkaido Mesh</button>
+        <button id="togglePolygonButton">境界表示</button>
     <!-- リーダーボード表示エリア -->
     <div id="leaderboard">
         <h4>リーダーボード (点数クリックでゲス地点へズームする。Click scores to zoom in the places they guessed.)</h4>
@@ -468,7 +469,39 @@ function displayLeaderboard(entries) {
     </script>
     
     <script src="hokkaido/hokuden_mesh.js"></script>
-
+    <script>
+        let polygonLayer = null; // レイヤーの保持用
+    
+        document.getElementById('togglePolygonButton').addEventListener('click', () => {
+            if (polygonLayer) {
+                polygonLayer.setMap(null);
+                polygonLayer = null;
+                document.getElementById('togglePolygonButton').textContent = '境界表示';
+            } else {
+                fetch('./shikuchoson/polygon_2025.geojson')
+                    .then(response => response.json())
+                    .then(data => {
+                        polygonLayer = new google.maps.Data();
+                        polygonLayer.addGeoJson(data);
+    
+                        polygonLayer.setStyle({
+                            strokeColor: '#ff0000',     // 赤
+                            strokeWeight: 3,            // 太め
+                            strokeOpacity: 1.0,         // 完全不透明
+                            fillColor: '#ff0000',       // 塗りつぶし色（透明に）
+                            fillOpacity: 0.0            // 完全透明
+                        });
+    
+                        polygonLayer.setMap(map);
+                        document.getElementById('togglePolygonButton').textContent = '非表示';
+                    })
+                    .catch(error => {
+                        console.error('GeoJSON の読み込みに失敗しました:', error);
+                        alert('GeoJSON の読み込みに失敗しました。');
+                    });
+            }
+        });
+    </script>
     <!-- Google Maps JavaScript API をロード -->
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw&&region=JP&callback=initMap">
