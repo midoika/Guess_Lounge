@@ -3,6 +3,9 @@
 - [戦績一覧検索](https://midoika.github.io/Guess_Lounge/archive/search)
 - プロフィールURLの登録方法 [https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url](https://midoika.github.io/Guess_Lounge/how_to_register_your_profile_url)
 
+- [複数のLive challengeを集計（順位基準）](https://midoika.github.io/Guess_Lounge/Integrated_Position_for_storelive.html)
+- [複数のLive challengeを集計（得点基準）](https://midoika.github.io/Guess_Lounge/Integrated_Scores_for_makelive.html)
+
 # 🇯🇵
 ## 登録 (@マルチ募集、@Guess Lounge Player 、モデレーター)
 ###  [#⑥-✅参加登録](https://discord.com/channels/956620253603967006/1261681629739356273) で登録して下さい。ただし名前は`_`と`.`が消えます。
