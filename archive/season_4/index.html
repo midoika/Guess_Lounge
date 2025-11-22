@@ -79,34 +79,45 @@
     } else {
       alert("URLパラメータに id または url を指定してください。");
     }
+    
+    function createTable(elementId, data, title) {
+      // win / loss だけを取り出す
+      const judged = data.filter(item => item.result === "win" || item.result === "loss");
+    
+      const winCount = judged.filter(item => item.result === "win").length;
+      const lossCount = judged.filter(item => item.result === "loss").length;
+      const total = judged.length;
+    
+      // 分母に win+loss だけを使う（1,2,3 などは無視）
+      const winPercentage = total > 0 ? ((winCount / total) * 100).toFixed(1) : "0.0";
+    
+      let html = `<h2>${title}</h2><p>Win Rate: ${winPercentage}% | Win: ${winCount}, Loss: ${lossCount}</p>`;
+      html += `<table><tr><th>Opponent</th><th>Result</th><th>Score</th><th>URL</th></tr>`;
+    
+      data.forEach(item => {
+        // url の型を吸収：配列 or 文字列 or undefined
+        let urlList = [];
+    
+        if (Array.isArray(item.url)) {
+          // 新形式（配列）
+          urlList = item.url;
+        } else if (typeof item.url === 'string' && item.url.trim() !== '') {
+          // 旧形式（単一の文字列）
+          urlList = [item.url.trim()];
+        }
+    
+        const urls = urlList
+          .filter(url => url !== "http://example.com")
+          .map(url => `<a href="${url}" target="_blank">Link</a>`)
+          .join(", ");
+    
+        html += `<tr><td>${item.opponent}</td><td>${item.result}</td><td>${item.score}</td><td>${urls}</td></tr>`;
+      });
+    
+      html += "</table>";
+      document.getElementById(elementId).innerHTML = html;
+    }
 
-function createTable(elementId, data, title) {
-  // win / loss だけを取り出す
-  const judged = data.filter(item => item.result === "win" || item.result === "loss");
-
-  const winCount = judged.filter(item => item.result === "win").length;
-  const lossCount = judged.filter(item => item.result === "loss").length;
-  const total = judged.length;
-
-  // 分母に win+loss だけを使う（1,2,3 などは無視）
-  const winPercentage = total > 0 ? ((winCount / total) * 100).toFixed(1) : "0.0";
-
-  let html = `<h2>${title}</h2><p>Win Rate: ${winPercentage}% | Win: ${winCount}, Loss: ${lossCount}</p>`;
-  html += `<table><tr><th>Opponent</th><th>Result</th><th>Score</th><th>URL</th></tr>`;
-
-  // 表自体は今まで通り全部表示してOK（数字もそのまま出る）
-  data.forEach(item => {
-    const urls = (item.url || [])
-      .filter(url => url !== "http://example.com")
-      .map(url => `<a href="${url}" target="_blank">Link</a>`)
-      .join(", ");
-
-    html += `<tr><td>${item.opponent}</td><td>${item.result}</td><td>${item.score}</td><td>${urls}</td></tr>`;
-  });
-
-  html += "</table>";
-  document.getElementById(elementId).innerHTML = html;
-}
 
 
     function createLineChart(elementId, data, label) {
@@ -141,4 +152,5 @@ function createTable(elementId, data, title) {
   </script>
 </body>
 </html>
+
 
