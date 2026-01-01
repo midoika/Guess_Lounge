@@ -35,12 +35,8 @@
             height: 40px;
             margin-right: 10px;
         }
-        /* ▼ manhole UI */
-        #toggleButtons {
-            margin: 10px 0;
-        }
-        #customContextMenu a { color: inherit; text-decoration: none; }
     </style>
+    <script src="https://unpkg.com/polylabel@1.1.0/polylabel.js"></script>
 </head>
 
 
@@ -51,15 +47,9 @@
         <div id="summaryContent"></div>
     </div>
     <div id="map"></div>
-
-    <div id="toggleButtons">
-        <!-- ✅ 既存ボタン -->
+    <!-- ✅ メッシュ表示ボタンを追加 -->
         <button id="toggleMeshButton">Hokkaido Mesh</button>
         <button id="togglePolygonButton">境界表示</button>
-        <!-- ✅ 追加: manhole ボタン -->
-        <button id="toggleManholeButton">manhole</button>
-    </div>
-
     <!-- リーダーボード表示エリア -->
     <div id="leaderboard">
         <h4>リーダーボード (点数クリックでゲス地点へズームする。Click scores to zoom in the places they guessed.)</h4>
@@ -88,25 +78,22 @@
         const documentId = params.get('document');
 
         // マップとピンの初期化
-        let map;  // マップ
-        let markers = [];  // 既存のピン
-        let infoWindow = null; // 共有インフォウィンドウ
+        let map;  // マップ変数をスコープ外で宣言して、他の関数からもアクセス可能に
+        let markers = [];  // 既存のピンを管理するための配列
         
         function initMap(coordinates) {
             map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 5,
-                center: coordinates.length > 0 ? coordinates[0] : { lat: 35.6895, lng: 139.6917 },
-                streetViewControl: false,
-                gestureHandling: 'greedy'
+                center: coordinates.length > 0 ? coordinates[0] : { lat: 35.6895, lng: 139.6917 },  // デフォルトの中心
+                streetViewControl: false,  // ペグマン（ストリートビュー）を無効化
+                gestureHandling: 'greedy'  // Ctrlなしでもズームできるようにする
             });
-
-            infoWindow = new google.maps.InfoWindow();
         
             // ピンを最初に全て消す
             markers.forEach(marker => marker.setMap(null));
-            markers = [];
+            markers = [];  // ピンをリセット
         
-            // マップの範囲を動的に調整
+            // マップの範囲を動的に調整するための LatLngBounds オブジェクトを作成
             const bounds = new google.maps.LatLngBounds();
         
             // 座標にピンを置く
@@ -118,77 +105,97 @@
             });
 
         
+            // ピンの座標に応じてマップをリサイズし、すべてのピンが見えるようにする
             if (coordinates.length > 0) {
-                map.fitBounds(bounds);
+                map.fitBounds(bounds);  // すべてのピンが表示される範囲にズーム・センターを調整
             }
         }
 
         // ピンを追跡するためのオブジェクト（2次元）
         const activeMarkers = {};
-        const activePolylines = {};  // 点線を管理
+        const activePolylines = {};  // 点線を管理するためのオブジェクト（2次元）
         
-        // ピンの追加/削除（アバター）
+        // ピンの追加/削除
         function toggleMarkerWithAvatar(lat, lng, avatarUrl, roundNumber) {
+            // ラウンドごとのマーカーオブジェクトが存在しない場合、初期化
             if (!activeMarkers[roundNumber]) {
                 activeMarkers[roundNumber] = {};
-                activePolylines[roundNumber] = {};
+                activePolylines[roundNumber] = {};  // 点線の追跡オブジェクトも初期化
             }
         
+            // 該当するラウンドとアバターのマーカーが既に存在する場合、それを消して false を返す
             if (activeMarkers[roundNumber][avatarUrl]) {
+                // マーカーを地図から削除
                 activeMarkers[roundNumber][avatarUrl].setMap(null);
                 delete activeMarkers[roundNumber][avatarUrl];
         
+                // 点線が存在する場合、消す
                 if (activePolylines[roundNumber][avatarUrl]) {
                     activePolylines[roundNumber][avatarUrl].setMap(null);
                     delete activePolylines[roundNumber][avatarUrl];
                 }
-                return false;
+        
+                return false;  // マーカーを消したので false を返す
             } else {
+                // 新しいピンを追加して true を返す
                 const marker = new google.maps.Marker({
                     position: { lat: lat, lng: lng },
                     map: map,
                     icon: {
-                        url: avatarUrl,
-                        scaledSize: new google.maps.Size(40, 40)
+                        url: avatarUrl,  // アバター画像をピンに設定
+                        scaledSize: new google.maps.Size(40, 40)  // サイズ調整
                     },
                     title: `Lat: ${lat}, Lng: ${lng}`
                 });
         
+                // ピンがクリックされた時にストリートビューのリンクに飛ぶ
                 marker.addListener('click', () => {
                     window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
                 });
         
+                // ピンを追跡
                 activeMarkers[roundNumber][avatarUrl] = marker;
         
+                // マップをその座標に移動し、ズームレベルを調整
                 map.setCenter({ lat: lat, lng: lng });
                 map.setZoom(12);
         
+                // coordinates.forEachで該当するインデックスのマーカーを取得し、点線を引く
                 if (markers[roundNumber - 1]) {
                     const polyline = new google.maps.Polyline({
                         path: [
-                            markers[roundNumber - 1].getPosition(),
-                            marker.getPosition()
+                            markers[roundNumber - 1].getPosition(),  // ラウンド番号とインデックスを一致させたマーカーの座標
+                            marker.getPosition()  // 現在のピンの座標
                         ],
                         geodesic: true,
-                        strokeColor: '#000000',
-                        strokeOpacity: 0,
+                        strokeColor: '#000000',  // 線の色を黒に設定
+                        strokeOpacity: 0,  // 実際の線の色は透明に
                         strokeWeight: 2,
                         icons: [{
-                            icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },
+                            icon: { path: 'M 0,-1 0,1', strokeOpacity: 1, scale: 3 },  // 点線のパス
                             offset: '0',
-                            repeat: '10px'
+                            repeat: '10px'  // 点線の繰り返し間隔
                         }]
                     });
+        
+                    // 点線を地図に追加
                     polyline.setMap(map);
+        
+                    // 点線を追跡
                     activePolylines[roundNumber][avatarUrl] = polyline;
                 }
-                return true;
+        
+                return true;  // 新しいピンを追加したので true を返す
             }
         }
 
+
+        
         // 概要の表示
         function displaySummary(data) {
             const summaryContent = document.getElementById('summaryContent');
+            
+            // 最初のラウンド情報を取得
             const firstRound = data.rounds[0];
 
             if (firstRound) {
@@ -209,83 +216,122 @@
             }
         }
 
+
+
+
+    
 // リーダーボードの表示
 function displayLeaderboard(entries) {
     const leaderboardContainer = document.getElementById('leaderboardEntries');
-    leaderboardContainer.innerHTML = '';
+    leaderboardContainer.innerHTML = '';  // 既存の内容をクリア
 
     entries.forEach((entry, index) => {
         const playerDiv = document.createElement('div');
         playerDiv.className = 'player';
 
-        // 順位
+        // 順位を表示
         const rankSpan = document.createElement('span');
         let rankText = '';
-        if (index === 0) rankText = '1st';
-        else if (index === 1) rankText = '2nd';
-        else if (index === 2) rankText = '3rd';
-        else rankText = `${index + 1}th`;
+        if (index === 0) {
+            rankText = '1st';
+        } else if (index === 1) {
+            rankText = '2nd';
+        } else if (index === 2) {
+            rankText = '3rd';
+        } else {
+            rankText = `${index + 1}th`;
+        }
         rankSpan.textContent = rankText + ' ';
-        rankSpan.className = 'rank';
+        rankSpan.className = 'rank';  // 必要に応じてクラスを追加
 
+        // アバター
         const avatar = document.createElement('img');
         avatar.src = "https://www.geoguessr.com/images/plain/" + entry.avatarPath;
         avatar.className = 'avatar';
 
         const nameAndScore = document.createElement('div');
+        // 名前をリンクにして、entry.idをURLに設定
         const nameLink = document.createElement('a');
-        nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;
+        nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;  // entry.idをURLとして使用
         nameLink.textContent = entry.name;
-        nameLink.className = 'name-link';
+        nameLink.className = 'name-link'; // 必要に応じてクラスを追加
         nameAndScore.appendChild(nameLink);
 
+        // 合計点と秒数を囲む要素を作成
         const scoreAndTimeSpan = document.createElement('span');
-        scoreAndTimeSpan.style.cursor = 'pointer';
+        scoreAndTimeSpan.style.cursor = 'pointer'; // クリック可能なカーソルを表示
         scoreAndTimeSpan.textContent = `: ${entry.totalScore}pts (${entry.totalTime}s)`;
+
+        // 合計点クリックイベント
         scoreAndTimeSpan.addEventListener('click', () => {
+            // この行の全てのスコアを順にクリック扱いにする
             const scores = playerDiv.querySelectorAll('.round-score');
             scores.forEach(score => score.click());
+
+            // マップ範囲を調整
             const bounds = new google.maps.LatLngBounds();
+
+            // このプレイヤーの全てのラウンド座標を取得し、bounds に追加
             entry.guesses.forEach(guess => {
                 if (guess.lat && guess.lng) {
                     bounds.extend(new google.maps.LatLng(guess.lat, guess.lng));
                 }
             });
+
+            // マップを範囲に合わせてズーム・パンする
             map.fitBounds(bounds);
         });
+
         nameAndScore.appendChild(scoreAndTimeSpan);
 
+        // 合計点とラウンドスコアの間に "=" を挿入
         const equalsSpan = document.createElement('span');
         equalsSpan.textContent = ' = ';
         nameAndScore.appendChild(equalsSpan);
 
-        const roundScores = document.createElement('span');
-        roundScores.className = 'round-scores';
+        const roundScores = document.createElement('span');  // divからspanに変更
+        roundScores.className = 'round-scores'; // 必要に応じてクラスを追加
 
+        // ラウンドごとのスコアを表示
         entry.guesses.forEach(guess => {
             const roundScore = document.createElement('span');
             roundScore.textContent = ` R${guess.roundNumber}: ${guess.score}pts`;
+
+            // 時間の部分を小さく表示
             const timeSpan = document.createElement('span');
             timeSpan.textContent = `(${guess.time}s) `;
-            timeSpan.style.fontSize = 'smaller';
+            timeSpan.style.fontSize = 'smaller';  // 文字サイズを小さく設定
+
             roundScore.appendChild(timeSpan);
-            roundScore.className = 'round-score';
+            roundScore.className = 'round-score'; // 必要ならスタイル用のクラスを追加
+
             roundScore.addEventListener('click', () => {
-                const result = toggleMarkerWithAvatar(guess.lat, guess.lng, avatar.src, guess.roundNumber);
-                roundScore.style.color = result ? 'yellowgreen' : '';
+                const result = toggleMarkerWithAvatar(guess.lat, guess.lng, avatar.src, guess.roundNumber);  // クリック時にピンをトグル
+
+                // 返り値に応じて文字色を変更
+                if (result) {
+                    roundScore.style.color = 'yellowgreen';  // 真理値がtrueなら黄緑色
+                } else {
+                    roundScore.style.color = '';  // falseなら通常の色に戻す
+                }
             });
+
             roundScores.appendChild(roundScore);
         });
 
-        playerDiv.appendChild(rankSpan);
+        // 順位、アバター、名前とスコア、ラウンドスコアをプレイヤーのdivに追加
+        playerDiv.appendChild(rankSpan);  // 順位をアバターの前に追加
         playerDiv.appendChild(avatar);
         playerDiv.appendChild(nameAndScore);
-        playerDiv.appendChild(roundScores);
+        playerDiv.appendChild(roundScores);  // ラウンドごとのスコアを追加
         leaderboardContainer.appendChild(playerDiv);
     });
 }
 
+
+
         if (collectionName && documentId) {
+            // ドキュメントが指定されている場合、そのドキュメントを取得
             db.collection(collectionName).doc(documentId)
                 .get()
                 .then(doc => {
@@ -294,6 +340,7 @@ function displayLeaderboard(entries) {
                         displaySummary(data);
                         const coordinates = [];
 
+                        // roundsが存在するか確認
                         if (data.rounds && Array.isArray(data.rounds)) {
                             data.rounds.forEach(round => {
                                 const coordinate = round.answer?.coordinateAnswerPayload?.coordinate;
@@ -306,13 +353,19 @@ function displayLeaderboard(entries) {
                                 }
                             });
                         }
+
+                        // マップにピンを表示
                         initMap(coordinates);
 
+                        // topPlayersが存在するか確認
                         if (Array.isArray(data.topPlayers)) {
                             const entries = data.topPlayers;
+                            // 順位付けのためにソート（合計点が高い順 → 同点なら秒数が少ない順）
                             entries.sort((a, b) => {
-                                if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-                                return a.totalTime - b.totalTime;
+                                if (b.totalScore !== a.totalScore) {
+                                    return b.totalScore - a.totalScore; // 合計点が高い順
+                                }
+                                return a.totalTime - b.totalTime; // 同点なら秒数が少ない方を上に
                             });
                             displayLeaderboard(entries);
                         } else {
@@ -330,9 +383,227 @@ function displayLeaderboard(entries) {
             alert('コレクション名またはドキュメントIDが指定されていません。');
         }
     </script>
-
-    <!-- ▼ 右クリック用メニューとマーカー生成 -->
     <script>
+    /* ===== polygonLayer(Data) のポリゴン内に NAME を最大フォントで描く ===== */
+    
+    function ringAreaAbs(ring) {
+      let a = 0;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        a += (ring[j].x * ring[i].y - ring[i].x * ring[j].y);
+      }
+      return Math.abs(a) / 2;
+    }
+    
+    function pointInRing(p, ring) {
+      let inside = false;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const xi = ring[i].x, yi = ring[i].y;
+        const xj = ring[j].x, yj = ring[j].y;
+        const intersect = ((yi > p.y) !== (yj > p.y)) &&
+          (p.x < (xj - xi) * (p.y - yi) / ((yj - yi) || 1e-12) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+    
+    function pointInPolygonWithHoles(p, rings) {
+      if (!rings.length) return false;
+      if (!pointInRing(p, rings[0])) return false;
+      for (let i = 1; i < rings.length; i++) {
+        if (pointInRing(p, rings[i])) return false;
+      }
+      return true;
+    }
+    
+    function ringsToPolylabelInput(rings) {
+      return rings.map(r => r.map(p => [p.x, p.y]));
+    }
+    
+    function measureTextBox(ctx, text, fontSizePx, fontFamily) {
+      ctx.font = `${fontSizePx}px ${fontFamily}`;
+      const w = ctx.measureText(text).width;
+      const h = fontSizePx * 1.2;
+      return { w, h };
+    }
+    
+    function rectFitsPolygon(center, box, rings, samplePerEdge = 3) {
+      const halfW = box.w / 2;
+      const halfH = box.h / 2;
+    
+      const corners = [
+        { x: center.x - halfW, y: center.y - halfH },
+        { x: center.x + halfW, y: center.y - halfH },
+        { x: center.x + halfW, y: center.y + halfH },
+        { x: center.x - halfW, y: center.y + halfH },
+      ];
+    
+      for (const c of corners) {
+        if (!pointInPolygonWithHoles(c, rings)) return false;
+      }
+    
+      for (let e = 0; e < 4; e++) {
+        const a = corners[e];
+        const b = corners[(e + 1) % 4];
+        for (let k = 1; k <= samplePerEdge; k++) {
+          const t = k / (samplePerEdge + 1);
+          const s = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+          if (!pointInPolygonWithHoles(s, rings)) return false;
+        }
+      }
+      return true;
+    }
+    
+    function findMaxFontSize(ctx, text, center, rings, opt) {
+      const min = opt.min ?? 6;
+      const max = opt.max ?? 160;
+      const fontFamily = opt.fontFamily ?? "sans-serif";
+    
+      let lo = min, hi = max, best = min;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        const box = measureTextBox(ctx, text, mid, fontFamily);
+        if (rectFitsPolygon(center, box, rings)) {
+          best = mid;
+          lo = mid + 1;
+        } else {
+          hi = mid - 1;
+        }
+      }
+      return best;
+    }
+    
+    // Data.Geometry(Polygon/MultiPolygon) -> ピクセルrings配列を作る
+    function polygonToPixelRings(poly, projection) {
+      // poly: google.maps.Data.Polygon
+      return poly.getArray().map((linearRing) => {
+        return linearRing.getArray().map((latLng) => {
+          const pt = projection.fromLatLngToDivPixel(latLng);
+          return { x: pt.x, y: pt.y };
+        });
+      });
+    }
+    
+    // Data.Geometry から「面積最大の Polygon 1個」だけ返す（MultiPolygon対応）
+    function pickLargestPolygonFromDataGeometry(geom, projection) {
+      const type = geom.getType();
+      if (type === "Polygon") return geom;
+      if (type !== "MultiPolygon") return null;
+    
+      let bestPoly = null;
+      let bestArea = -1;
+    
+      geom.getArray().forEach((poly) => {
+        const rings = polygonToPixelRings(poly, projection);
+        if (!rings.length || rings[0].length < 3) return;
+    
+        const area = ringAreaAbs(rings[0]); // outerのみ
+        if (area > bestArea) {
+          bestArea = area;
+          bestPoly = poly;
+        }
+      });
+    
+      return bestPoly;
+    }
+    
+    /**
+     * polygonLayer(Data) の各Featureに対して NAME を描画する Overlay を追加
+     * 返り値: { remove(), redraw() }
+     */
+    function addPolygonLabelsOverlayForDataLayer(map, dataLayer, opt = {}) {
+      const getText = opt.getText ?? ((feature) => feature.getProperty("NAME") ?? "");
+      const fontFamily = opt.fontFamily ?? "Noto Sans JP, sans-serif";
+      const minFont = opt.minFont ?? 6;
+      const maxFont = opt.maxFont ?? 160;
+      const minDrawFont = opt.minDrawFont ?? 7; // これ未満なら描かない
+    
+      class LabelOverlay extends google.maps.OverlayView {
+        onAdd() {
+          this.canvas = document.createElement("canvas");
+          this.canvas.style.position = "absolute";
+          this.canvas.style.left = "0px";
+          this.canvas.style.top = "0px";
+          this.ctx = this.canvas.getContext("2d");
+          this.getPanes().overlayLayer.appendChild(this.canvas);
+        }
+        onRemove() {
+          this.canvas?.remove();
+          this.canvas = null;
+          this.ctx = null;
+        }
+        draw() {
+          const proj = this.getProjection();
+          if (!proj || !this.canvas) return;
+    
+          const div = map.getDiv();
+          const w = div.clientWidth;
+          const h = div.clientHeight;
+    
+          this.canvas.width = w;
+          this.canvas.height = h;
+    
+          const ctx = this.ctx;
+          ctx.clearRect(0, 0, w, h);
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = "rgba(0,0,0,0.85)";
+    
+          // Dataレイヤ（polygonLayer）のfeatureを走査
+          dataLayer.forEach((feature) => {
+            const text = String(getText(feature) || "").trim();
+            if (!text) return;
+    
+            const geom = feature.getGeometry();
+            if (!geom) return;
+    
+            const polyGeom = pickLargestPolygonFromDataGeometry(geom, proj);
+            if (!polyGeom) return;
+    
+            const rings = polygonToPixelRings(polyGeom, proj);
+            if (!rings.length || rings[0].length < 3) return;
+    
+            // polylabel（視覚中心）
+            const pole = window.polylabel(ringsToPolylabelInput(rings), 1.0);
+            const center = { x: pole[0], y: pole[1] };
+            if (!pointInPolygonWithHoles(center, rings)) return;
+    
+            const fontSize = findMaxFontSize(ctx, text, center, rings, {
+              min: minFont,
+              max: maxFont,
+              fontFamily
+            });
+    
+            if (fontSize < minDrawFont) return;
+    
+            ctx.font = `${fontSize}px ${fontFamily}`;
+    
+            // 白フチ + 黒文字
+            ctx.lineWidth = Math.max(2, fontSize * 0.15);
+            ctx.strokeStyle = "rgba(255,255,255,0.9)";
+            ctx.strokeText(text, center.x, center.y);
+            ctx.fillText(text, center.x, center.y);
+          });
+        }
+      }
+    
+      const overlay = new LabelOverlay();
+      overlay.setMap(map);
+    
+      const idleListener = map.addListener("idle", () => overlay.draw());
+    
+      return {
+        overlay,
+        redraw() { overlay.draw(); },
+        remove() {
+          google.maps.event.removeListener(idleListener);
+          overlay.setMap(null);
+        }
+      };
+    }
+    </script>
+
+    <script>
+        // カスタムコンテキストメニューの作成
         const contextMenu = document.createElement('div');
         contextMenu.id = 'customContextMenu';
         contextMenu.style.position = 'absolute';
@@ -344,229 +615,140 @@ function displayLeaderboard(entries) {
         contextMenu.style.zIndex = '1000';
         document.body.appendChild(contextMenu);
     
+        // メニュー項目の作成
         function createMenuItem(text, onClick) {
             const item = document.createElement('div');
             item.textContent = text;
             item.style.padding = '5px 10px';
             item.style.cursor = 'pointer';
-            item.addEventListener('click', () => { onClick(); contextMenu.style.display = 'none'; });
+            item.addEventListener('click', () => {
+                onClick();
+                contextMenu.style.display = 'none';
+            });
             item.addEventListener('mouseover', () => item.style.background = '#ddd');
             item.addEventListener('mouseout', () => item.style.background = '');
             return item;
         }
 
+        // ピンの右クリックイベントにコンテキストメニューを追加
         function addMarkerWithContextMenu(lat, lng, map) {
-            const marker = new google.maps.Marker({ position: { lat, lng }, map, title: `Lat: ${lat}, Lng: ${lng}` });
-            marker.addListener('click', () => window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank'));
+            const marker = new google.maps.Marker({
+                position: { lat: lat, lng: lng },
+                map: map,
+                title: `Lat: ${lat}, Lng: ${lng}`
+            });
+        
+            marker.addListener('click', () => {
+                window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
+            });
+        
             marker.addListener('rightclick', (event) => {
                 contextMenu.innerHTML = '';
-                contextMenu.appendChild(createMenuItem('リンクをコピーする', () => navigator.clipboard.writeText(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`)));
-                contextMenu.appendChild(createMenuItem('座標をコピーする', () => navigator.clipboard.writeText(`${lat},${lng}`)));
-                contextMenu.appendChild(createMenuItem('地理院地図で見る', () => window.open(`https://maps.gsi.go.jp/#15/${lat}/${lng}/&base=std&ls=std%7Chillshademap%2C0.37%7Crelief_free&blend=01&disp=110&d=m&reliefdata=25G0000FFGAG0095FFG32G00EEFFG64G91FF00G1F4GFFFF00G5DCGFF8C00GGFF4400`, '_blank')));
-                contextMenu.appendChild(createMenuItem('むかしの市町村境界マップで見る', () => window.open(`https://hanishina.net/maps/historymap.html?y=${lat}&x=${lng}&z=12&date0=1995-01-01&date1=2020-01-01&base0=google&base1=paleMap&label0=true&label1=false&color0=false&color1=false&rail0=false&rail1=false&did0=false&did1=false&dual=false`, '_blank')));
-                contextMenu.appendChild(createMenuItem('Yahoo! マップで見る', () => window.open(`https://map.yahoo.co.jp/?lat=${lat}&lon=${lng}&zoom=14&maptype=basic`, '_blank')));
-                contextMenu.appendChild(createMenuItem('Open Street Map で見る', () => window.open(`https://www.openstreetmap.org/#map=15/${lat}/${lng}`, '_blank')));
-                contextMenu.appendChild(createMenuItem('Appleマップ (β) で見る', () => window.open(`https://beta.maps.apple.com/?ll=${lat}%2c${lng}`, '_blank')));
-                contextMenu.appendChild(createMenuItem('マピオンで見る', () => window.open(`https://www.mapion.co.jp/m2/${lat},${lng},15`, '_blank')));
-                contextMenu.appendChild(createMenuItem('MapFanで見る', () => window.open(`https://mapfan.com/map?c=${lat},${lng},15&s=std,pc,ja&p=none`, '_blank')));
-                contextMenu.appendChild(createMenuItem('Bing マップで見る', () => window.open(`https://www.bing.com/maps?cp=${lat}%7E${lng}&lvl=14.2`, '_blank')));
+                contextMenu.appendChild(createMenuItem('リンクをコピーする', () => {
+                    navigator.clipboard.writeText(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`);
+                }));
+                contextMenu.appendChild(createMenuItem('座標をコピーする', () => {
+                    navigator.clipboard.writeText(`${lat},${lng}`);
+                }));
+                contextMenu.appendChild(createMenuItem('Google Earthで見る', () => {
+                    window.open(`https://earth.google.com/web/@${lat},${lng},36.21875126a,200000d`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('地理院地図で見る', () => {
+                    window.open(`https://maps.gsi.go.jp/#15/${lat}/${lng}/&base=std&ls=std%7Chillshademap%2C0.37%7Crelief_free&blend=01&disp=110&d=m&reliefdata=25G0000FFGAG0095FFG32G00EEFFG64G91FF00G1F4GFFFF00G5DCGFF8C00GGFF4400`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('むかしの市町村境界マップで見る', () => {
+                    window.open(`https://hanishina.net/maps/historymap.html?y=${lat}&x=${lng}&z=12&date0=1995-01-01&date1=2020-01-01&base0=google&base1=paleMap&label0=true&label1=false&color0=false&color1=false&rail0=false&rail1=false&did0=false&did1=false&dual=false`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('Yahoo! マップで見る', () => {
+                    window.open(`https://map.yahoo.co.jp/?lat=${lat}&lon=${lng}&zoom=14&maptype=basic`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('Open Street Map で見る', () => {
+                    window.open(`https://www.openstreetmap.org/#map=15/${lat}/${lng}`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('Appleマップ (β) で見る', () => {
+                    window.open(`https://beta.maps.apple.com/?ll=${lat}%2c${lng}`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('マピオンで見る', () => {
+                    window.open(`https://www.mapion.co.jp/m2/${lat},${lng},15`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('MapFanで見る', () => {
+                    window.open(`https://mapfan.com/map?c=${lat},${lng},15&s=std,pc,ja&p=none`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('Bing マップで見る', () => {
+                    window.open(`https://www.bing.com/maps?cp=${lat}%7E${lng}&lvl=14.2`, '_blank');
+                }));
+                contextMenu.appendChild(createMenuItem('mappleで見る', () => {
+                    window.open(`https://labs.mapple.com/mapplevt.html#13/${lat}/${lng}`, '_blank');
+                }));
+                // マウスポインタの右隣にメニューを表示
                 contextMenu.style.left = `${event.domEvent.clientX + 10}px`;
                 contextMenu.style.top = `${event.domEvent.clientY}px`;
                 contextMenu.style.display = 'block';
             });
+         
             return marker;
         }
 
-        document.addEventListener('click', () => { contextMenu.style.display = 'none'; });
+    
+        // クリック時にメニューを閉じる
+        document.addEventListener('click', () => {
+            contextMenu.style.display = 'none';
+        });
     </script>
     
-    <!-- ▼ 既存のメッシュ描画 -->
     <script src="hokkaido/hokuden_mesh.js"></script>
-
-    <!-- ▼ 市区町村ポリゴンの表示トグル（既存） -->
     <script>
-        let polygonLayer = null; // 既存レイヤー
+      let polygonLayer = null; // 境界Dataレイヤ
+      let polygonLabelOverlay = null; // ★ラベルoverlay
     
-        document.getElementById('togglePolygonButton').addEventListener('click', () => {
-            if (polygonLayer) {
-                polygonLayer.setMap(null);
-                polygonLayer = null;
-                document.getElementById('togglePolygonButton').textContent = '境界表示';
-            } else {
-                fetch('./shikuchoson/polygon_2025.geojson')
-                    .then(response => response.json())
-                    .then(data => {
-                        polygonLayer = new google.maps.Data();
-                        polygonLayer.addGeoJson(data);
+      document.getElementById('togglePolygonButton').addEventListener('click', () => {
+        if (polygonLayer) {
+          // OFF
+          if (polygonLabelOverlay) {
+            polygonLabelOverlay.remove();
+            polygonLabelOverlay = null;
+          }
+          polygonLayer.setMap(null);
+          polygonLayer = null;
+          document.getElementById('togglePolygonButton').textContent = '境界表示';
+        } else {
+          // ON
+          fetch('./shikuchoson/polygon_2025.geojson')
+            .then(response => response.json())
+            .then(data => {
+              polygonLayer = new google.maps.Data();
+              polygonLayer.addGeoJson(data);
     
-                        polygonLayer.setStyle({
-                            strokeColor: '#0000ff',
-                            strokeWeight: 3,
-                            strokeOpacity: 1.0,
-                            fillColor: '#0000ff',
-                            fillOpacity: 0.0
-                        });
-
-                        polygonLayer.setMap(map);
-                        document.getElementById('togglePolygonButton').textContent = '非表示';
-                    })
-                    .catch(error => {
-                        console.error('GeoJSON の読み込みに失敗しました:', error);
-                        alert('GeoJSON の読み込みに失敗しました。');
-                    });
-            }
-        });
-    </script>
-
-    <!-- ▼ manhole 機能 -->
-    <script>
-        // manhole ボタンで TSV を読み込み、ポリゴンをクリック可能に
-        let manholeLayer = null;            // DataLayer（manhole 表示用）
-        let manholeMapByCode = null;        // city_code -> { url, status, prefecture, city }
-        let manholeMapByName = null;        // `${prefecture}|${city}` -> { ... }
-        let manholeEnabled = false;
-
-        const POSSIBLE_CODE_KEYS = ['CITY_CODE','CITYCODE','city_code','code','CITY_CD','自治体コード','JCODE','JISCODE'];
-        const POSSIBLE_PREF_KEYS = ['PREF','prefecture','都道府県','県名','PREF_NAME'];
-        const POSSIBLE_CITY_KEYS = ['CITY','city','市区町村','CITY_NAME','SHIKUCHOSON'];
-
-        document.getElementById('toggleManholeButton').addEventListener('click', async () => {
-            if (!manholeEnabled) {
-                try {
-                    if (!manholeMapByCode) {
-                        await loadManholeTSV();
-                    }
-                    await ensureManholeLayer();
-                    manholeEnabled = true;
-                    document.getElementById('toggleManholeButton').textContent = 'manhole（非表示）';
-                } catch (e) {
-                    console.error(e);
-                    alert('manhole の読み込みでエラーが発生しました。');
-                }
-            } else {
-                if (manholeLayer) {
-                    manholeLayer.setMap(null);
-                    manholeLayer = null;
-                }
-                manholeEnabled = false;
-                document.getElementById('toggleManholeButton').textContent = 'manhole';
-            }
-        });
-
-        async function loadManholeTSV() {
-            const res = await fetch('./manholes/city_manholes.csv');
-            if (!res.ok) throw new Error('TSV 読み込み失敗');
-            const text = await res.text();
-            const lines = text.trim().split(/\r?\n/);
-            if (lines.length === 0) throw new Error('TSV が空です');
-
-            const header = lines[0].split(/\t/).map(h => h.trim());
-            const idx = (name) => header.indexOf(name);
-
-            const codeIdx = idx('city_code');
-            const prefIdx = idx('prefecture');
-            const cityIdx = idx('city');
-            const urlIdx  = idx('manhole_url');
-            const statIdx = idx('status');
-
-            if ([codeIdx, prefIdx, cityIdx, urlIdx, statIdx].some(i => i < 0)) {
-                throw new Error('TSV のヘッダーが想定と異なります');
-            }
-
-            manholeMapByCode = new Map();
-            manholeMapByName = new Map();
-
-            for (let i = 1; i < lines.length; i++) {
-                const cols = lines[i].split(/\t/);
-                if (cols.length < header.length) continue;
-                const code = String(cols[codeIdx]).trim();
-                const pref = String(cols[prefIdx]).trim();
-                const city = String(cols[cityIdx]).trim();
-                const url  = String(cols[urlIdx]).trim();
-                const status = String(cols[statIdx]).trim();
-
-                const rec = { code, prefecture: pref, city, url, status };
-                if (code) manholeMapByCode.set(code, rec);
-                const key = `${pref}|${city}`;
-                manholeMapByName.set(key, rec);
-            }
-        }
-
-        async function ensureManholeLayer() {
-            if (manholeLayer) { manholeLayer.setMap(map); return; }
-            // 市区町村ポリゴンを読み込み（manhole 専用レイヤー）
-            const geo = await fetch('./shikuchoson/polygon_2025.geojson').then(r => r.json());
-            manholeLayer = new google.maps.Data({ map });
-            manholeLayer.addGeoJson(geo);
-
-            manholeLayer.setStyle({
-                strokeColor: '#ff00ff',      // 既存境界と区別
-                strokeOpacity: 0.7,
-                strokeWeight: 2,
+              polygonLayer.setStyle({
+                strokeColor: '#0000ff',
+                strokeWeight: 3,
+                strokeOpacity: 1.0,
+                fillColor: '#0000ff',
                 fillOpacity: 0.0
-            });
-
-            // Hover 表現
-            manholeLayer.addListener('mouseover', (e) => {
-                manholeLayer.overrideStyle(e.feature, { strokeWeight: 3 });
-            });
-            manholeLayer.addListener('mouseout', (e) => {
-                manholeLayer.revertStyle(e.feature);
-            });
-
-            // クリックで吹き出し
-            manholeLayer.addListener('click', (e) => {
-                const props = e.feature.getProperty ? getAllProperties(e.feature) : {};
-                const code = pickFirst(props, POSSIBLE_CODE_KEYS);
-                const pref = pickFirst(props, POSSIBLE_PREF_KEYS) || '';
-                const city = pickFirst(props, POSSIBLE_CITY_KEYS) || '';
-
-                let rec = null;
-                if (code && manholeMapByCode.has(String(code))) {
-                    rec = manholeMapByCode.get(String(code));
-                } else if (pref && city) {
-                    const key = `${pref}|${city}`;
-                    if (manholeMapByName.has(key)) rec = manholeMapByName.get(key);
-                }
-
-                const title = (pref || city) ? `${pref} ${city}` : (rec ? `${rec.prefecture} ${rec.city}` : '市区町村');
-
-                if (rec) {
-                    const html = `
-                        <div style="min-width:220px">
-                            <div><strong>${title}</strong></div>
-                            <div>Status: <a href="${rec.url}" target="_blank" rel="noopener">${rec.status}</a></div>
-                        </div>`;
-                    infoWindow.setContent(html);
-                } else {
-                    const html = `
-                        <div style="min-width:220px">
-                            <div><strong>${title}</strong></div>
-                            <div>対応する manhole データが見つかりません</div>
-                        </div>`;
-                    infoWindow.setContent(html);
-                }
-                infoWindow.setPosition(e.latLng);
-                infoWindow.open(map);
+              });
+    
+              polygonLayer.setMap(map);
+              document.getElementById('togglePolygonButton').textContent = '非表示';
+    
+              // ★ NAMEラベルを描画（MultiPolygonは面積最大の1個だけ）
+              polygonLabelOverlay = addPolygonLabelsOverlayForDataLayer(map, polygonLayer, {
+                getText: (f) => f.getProperty("NAME"),
+                fontFamily: "Noto Sans JP, sans-serif",
+                minFont: 6,
+                maxFont: 160,
+                minDrawFont: 7
+              });
+    
+              // 読み込み直後に一回描画
+              polygonLabelOverlay.redraw();
+            })
+            .catch(error => {
+              console.error('GeoJSON の読み込みに失敗しました:', error);
+              alert('GeoJSON の読み込みに失敗しました。');
             });
         }
-
-        function getAllProperties(feature) {
-            const props = {};
-            feature.forEachProperty((v, k) => { props[k] = v; });
-            return props;
-        }
-        function pickFirst(obj, keys) {
-            for (const k of keys) {
-                if (obj[k] != null && obj[k] !== '') return obj[k];
-                // 一部データはキーが小文字/大文字混在の可能性
-                const alt = Object.keys(obj).find(x => x.toLowerCase() === String(k).toLowerCase());
-                if (alt && obj[alt] != null && obj[alt] !== '') return obj[alt];
-            }
-            return null;
-        }
+      });
     </script>
-
     <!-- Google Maps JavaScript API をロード -->
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw&&region=JP&callback=initMap">
