@@ -36,7 +36,6 @@
             margin-right: 10px;
         }
     </style>
-    <script src="https://unpkg.com/polylabel@1.1.0/polylabel.js"></script>
 </head>
 
 
@@ -384,225 +383,6 @@ function displayLeaderboard(entries) {
         }
     </script>
     <script>
-    /* ===== polygonLayer(Data) のポリゴン内に NAME を最大フォントで描く ===== */
-    
-    function ringAreaAbs(ring) {
-      let a = 0;
-      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-        a += (ring[j].x * ring[i].y - ring[i].x * ring[j].y);
-      }
-      return Math.abs(a) / 2;
-    }
-    
-    function pointInRing(p, ring) {
-      let inside = false;
-      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-        const xi = ring[i].x, yi = ring[i].y;
-        const xj = ring[j].x, yj = ring[j].y;
-        const intersect = ((yi > p.y) !== (yj > p.y)) &&
-          (p.x < (xj - xi) * (p.y - yi) / ((yj - yi) || 1e-12) + xi);
-        if (intersect) inside = !inside;
-      }
-      return inside;
-    }
-    
-    function pointInPolygonWithHoles(p, rings) {
-      if (!rings.length) return false;
-      if (!pointInRing(p, rings[0])) return false;
-      for (let i = 1; i < rings.length; i++) {
-        if (pointInRing(p, rings[i])) return false;
-      }
-      return true;
-    }
-    
-    function ringsToPolylabelInput(rings) {
-      return rings.map(r => r.map(p => [p.x, p.y]));
-    }
-    
-    function measureTextBox(ctx, text, fontSizePx, fontFamily) {
-      ctx.font = `${fontSizePx}px ${fontFamily}`;
-      const w = ctx.measureText(text).width;
-      const h = fontSizePx * 1.2;
-      return { w, h };
-    }
-    
-    function rectFitsPolygon(center, box, rings, samplePerEdge = 3) {
-      const halfW = box.w / 2;
-      const halfH = box.h / 2;
-    
-      const corners = [
-        { x: center.x - halfW, y: center.y - halfH },
-        { x: center.x + halfW, y: center.y - halfH },
-        { x: center.x + halfW, y: center.y + halfH },
-        { x: center.x - halfW, y: center.y + halfH },
-      ];
-    
-      for (const c of corners) {
-        if (!pointInPolygonWithHoles(c, rings)) return false;
-      }
-    
-      for (let e = 0; e < 4; e++) {
-        const a = corners[e];
-        const b = corners[(e + 1) % 4];
-        for (let k = 1; k <= samplePerEdge; k++) {
-          const t = k / (samplePerEdge + 1);
-          const s = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
-          if (!pointInPolygonWithHoles(s, rings)) return false;
-        }
-      }
-      return true;
-    }
-    
-    function findMaxFontSize(ctx, text, center, rings, opt) {
-      const min = opt.min ?? 6;
-      const max = opt.max ?? 160;
-      const fontFamily = opt.fontFamily ?? "sans-serif";
-    
-      let lo = min, hi = max, best = min;
-      while (lo <= hi) {
-        const mid = (lo + hi) >> 1;
-        const box = measureTextBox(ctx, text, mid, fontFamily);
-        if (rectFitsPolygon(center, box, rings)) {
-          best = mid;
-          lo = mid + 1;
-        } else {
-          hi = mid - 1;
-        }
-      }
-      return best;
-    }
-    
-    // Data.Geometry(Polygon/MultiPolygon) -> ピクセルrings配列を作る
-    function polygonToPixelRings(poly, projection) {
-      // poly: google.maps.Data.Polygon
-      return poly.getArray().map((linearRing) => {
-        return linearRing.getArray().map((latLng) => {
-          const pt = projection.fromLatLngToDivPixel(latLng);
-          return { x: pt.x, y: pt.y };
-        });
-      });
-    }
-    
-    // Data.Geometry から「面積最大の Polygon 1個」だけ返す（MultiPolygon対応）
-    function pickLargestPolygonFromDataGeometry(geom, projection) {
-      const type = geom.getType();
-      if (type === "Polygon") return geom;
-      if (type !== "MultiPolygon") return null;
-    
-      let bestPoly = null;
-      let bestArea = -1;
-    
-      geom.getArray().forEach((poly) => {
-        const rings = polygonToPixelRings(poly, projection);
-        if (!rings.length || rings[0].length < 3) return;
-    
-        const area = ringAreaAbs(rings[0]); // outerのみ
-        if (area > bestArea) {
-          bestArea = area;
-          bestPoly = poly;
-        }
-      });
-    
-      return bestPoly;
-    }
-    
-    /**
-     * polygonLayer(Data) の各Featureに対して NAME を描画する Overlay を追加
-     * 返り値: { remove(), redraw() }
-     */
-    function addPolygonLabelsOverlayForDataLayer(map, dataLayer, opt = {}) {
-      const getText = opt.getText ?? ((feature) => feature.getProperty("NAME") ?? "");
-      const fontFamily = opt.fontFamily ?? "Noto Sans JP, sans-serif";
-      const minFont = opt.minFont ?? 6;
-      const maxFont = opt.maxFont ?? 160;
-      const minDrawFont = opt.minDrawFont ?? 7; // これ未満なら描かない
-    
-      class LabelOverlay extends google.maps.OverlayView {
-        onAdd() {
-          this.canvas = document.createElement("canvas");
-          this.canvas.style.position = "absolute";
-          this.canvas.style.left = "0px";
-          this.canvas.style.top = "0px";
-          this.ctx = this.canvas.getContext("2d");
-          this.getPanes().overlayLayer.appendChild(this.canvas);
-        }
-        onRemove() {
-          this.canvas?.remove();
-          this.canvas = null;
-          this.ctx = null;
-        }
-        draw() {
-          const proj = this.getProjection();
-          if (!proj || !this.canvas) return;
-    
-          const div = map.getDiv();
-          const w = div.clientWidth;
-          const h = div.clientHeight;
-    
-          this.canvas.width = w;
-          this.canvas.height = h;
-    
-          const ctx = this.ctx;
-          ctx.clearRect(0, 0, w, h);
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillStyle = "rgba(0,0,0,0.85)";
-    
-          // Dataレイヤ（polygonLayer）のfeatureを走査
-          dataLayer.forEach((feature) => {
-            const text = String(getText(feature) || "").trim();
-            if (!text) return;
-    
-            const geom = feature.getGeometry();
-            if (!geom) return;
-    
-            const polyGeom = pickLargestPolygonFromDataGeometry(geom, proj);
-            if (!polyGeom) return;
-    
-            const rings = polygonToPixelRings(polyGeom, proj);
-            if (!rings.length || rings[0].length < 3) return;
-    
-            // polylabel（視覚中心）
-            const pole = window.polylabel(ringsToPolylabelInput(rings), 1.0);
-            const center = { x: pole[0], y: pole[1] };
-            if (!pointInPolygonWithHoles(center, rings)) return;
-    
-            const fontSize = findMaxFontSize(ctx, text, center, rings, {
-              min: minFont,
-              max: maxFont,
-              fontFamily
-            });
-    
-            if (fontSize < minDrawFont) return;
-    
-            ctx.font = `${fontSize}px ${fontFamily}`;
-    
-            // 白フチ + 黒文字
-            ctx.lineWidth = Math.max(2, fontSize * 0.15);
-            ctx.strokeStyle = "rgba(255,255,255,0.9)";
-            ctx.strokeText(text, center.x, center.y);
-            ctx.fillText(text, center.x, center.y);
-          });
-        }
-      }
-    
-      const overlay = new LabelOverlay();
-      overlay.setMap(map);
-    
-      const idleListener = map.addListener("idle", () => overlay.draw());
-    
-      return {
-        overlay,
-        redraw() { overlay.draw(); },
-        remove() {
-          google.maps.event.removeListener(idleListener);
-          overlay.setMap(null);
-        }
-      };
-    }
-    </script>
-
-    <script>
         // カスタムコンテキストメニューの作成
         const contextMenu = document.createElement('div');
         contextMenu.id = 'customContextMenu';
@@ -698,60 +478,55 @@ function displayLeaderboard(entries) {
     
     <script src="hokkaido/hokuden_mesh.js"></script>
     <script>
-      let polygonLayer = null; // 境界Dataレイヤ
-      let polygonLabelOverlay = null; // ★ラベルoverlay
+        let polygonLayer = null; // レイヤーの保持用
     
-      document.getElementById('togglePolygonButton').addEventListener('click', () => {
-        if (polygonLayer) {
-          // OFF
-          if (polygonLabelOverlay) {
-            polygonLabelOverlay.remove();
-            polygonLabelOverlay = null;
-          }
-          polygonLayer.setMap(null);
-          polygonLayer = null;
-          document.getElementById('togglePolygonButton').textContent = '境界表示';
-        } else {
-          // ON
-          fetch('./shikuchoson/polygon_2025.geojson')
-            .then(response => response.json())
-            .then(data => {
-              polygonLayer = new google.maps.Data();
-              polygonLayer.addGeoJson(data);
+        document.getElementById('togglePolygonButton').addEventListener('click', () => {
+            if (polygonLayer) {
+                polygonLayer.setMap(null);
+                polygonLayer = null;
+                document.getElementById('togglePolygonButton').textContent = '境界表示';
+            } else {
+                fetch('./shikuchoson/polygon_2025.geojson')
+                    .then(response => response.json())
+                    .then(data => {
+                        polygonLayer = new google.maps.Data();
+                        polygonLayer.addGeoJson(data);
     
-              polygonLayer.setStyle({
-                strokeColor: '#0000ff',
-                strokeWeight: 3,
-                strokeOpacity: 1.0,
-                fillColor: '#0000ff',
-                fillOpacity: 0.0
-              });
-    
-              polygonLayer.setMap(map);
-              document.getElementById('togglePolygonButton').textContent = '非表示';
-    
-              // ★ NAMEラベルを描画（MultiPolygonは面積最大の1個だけ）
-              polygonLabelOverlay = addPolygonLabelsOverlayForDataLayer(map, polygonLayer, {
-                getText: (f) => f.getProperty("NAME"),
-                fontFamily: "Noto Sans JP, sans-serif",
-                minFont: 6,
-                maxFont: 160,
-                minDrawFont: 7
-              });
-    
-              // 読み込み直後に一回描画
-              polygonLabelOverlay.redraw();
-            })
-            .catch(error => {
-              console.error('GeoJSON の読み込みに失敗しました:', error);
-              alert('GeoJSON の読み込みに失敗しました。');
-            });
-        }
-      });
+                        polygonLayer.setStyle({
+                        strokeColor: '#0000ff',     // 🔵
+                        strokeWeight: 3,
+                        strokeOpacity: 1.0,
+                        fillColor: '#0000ff',
+                        fillOpacity: 0.0
+                    });
+
+                        polygonLayer.setMap(map);
+                        document.getElementById('togglePolygonButton').textContent = '非表示';
+                    })
+                    .catch(error => {
+                        console.error('GeoJSON の読み込みに失敗しました:', error);
+                        alert('GeoJSON の読み込みに失敗しました。');
+                    });
+            }
+        });
     </script>
     <!-- Google Maps JavaScript API をロード -->
-    <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw&&region=JP&callback=initMap">
+    <script>
+      // URL例: index.html?collection=...&document=...&lang=en
+      const params = new URLSearchParams(location.search);
+      const lang = params.get('lang') || 'ja';   // デフォルト日本語
+      const region = 'JP';                      // 必要なら params で変えてもOK
+    
+      // Google Maps JS API を動的に読み込む（language= を付与）
+      const gmap = document.createElement('script');
+      gmap.async = true;
+      gmap.defer = true;
+      gmap.src =
+        'https://maps.googleapis.com/maps/api/js'
+        + '?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw'
+        + '&region=' + encodeURIComponent(region)
+        + '&language=' + encodeURIComponent(lang);
+      document.head.appendChild(gmap);
     </script>
 </body>
 <footer id="source" style="margin-top: 40px; padding: 10px; background-color: #f1f1f1; border-top: 1px solid #ccc; text-align: center;">
