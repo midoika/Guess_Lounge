@@ -75,7 +75,7 @@
         const params = new URLSearchParams(window.location.search);
         const collectionName = params.get('collection');
         const documentId = params.get('document');
-        // const mapLang = params.get('lang');
+        const mapLang = params.get('lang');
 
         // マップとピンの初期化
         let map;  // マップ変数をスコープ外で宣言して、他の関数からもアクセス可能に
