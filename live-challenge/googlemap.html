@@ -75,6 +75,7 @@
         const params = new URLSearchParams(window.location.search);
         const collectionName = params.get('collection');
         const documentId = params.get('document');
+        // const mapLang = params.get('lang');
 
         // マップとピンの初期化
         let map;  // マップ変数をスコープ外で宣言して、他の関数からもアクセス可能に
@@ -509,25 +510,45 @@ function displayLeaderboard(entries) {
                     });
             }
         });
-    </script>
-    <!-- Google Maps JavaScript API をロード -->
-    <script>
-      // URL例: index.html?collection=...&document=...&lang=en
-      const params = new URLSearchParams(location.search);
-      const lang = params.get('lang') || 'ja';   // デフォルト日本語
-      const region = 'JP';                      // 必要なら params で変えてもOK
-    
-      // Google Maps JS API を動的に読み込む（language= を付与）
-      const gmap = document.createElement('script');
-      gmap.async = true;
-      gmap.defer = true;
-      gmap.src =
-        'https://maps.googleapis.com/maps/api/js'
-        + '?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw'
-        + '&region=' + encodeURIComponent(region)
-        + '&language=' + encodeURIComponent(lang);
-      document.head.appendChild(gmap);
-    </script>
+<script>
+  // =========================
+  // Google Maps language 制御
+  // =========================
+
+  // 許可する言語コード（必要に応じて追加）
+  const ALLOWED_LANGS = new Set([
+    'ja',      // 日本語
+    'en',      // 英語
+    'ko',      // 韓国語
+    'zh-CN',   // 中国語（簡体）
+    'zh-TW',   // 中国語（繁体）
+    'fr',      // フランス語
+    'de',      // ドイツ語
+    'es',      // スペイン語
+    'it'       // イタリア語
+  ]);
+
+  const params = new URLSearchParams(location.search);
+  const requestedLang = params.get('lang');
+
+  // ホワイトリスト方式で検証
+  const language = ALLOWED_LANGS.has(requestedLang) ? requestedLang : 'ja';
+
+  // region は固定（必要なら lang と同様に制御可）
+  const region = 'JP';
+
+  // Google Maps JavaScript API を動的ロード
+  const gmapScript = document.createElement('script');
+  gmapScript.async = true;
+  gmapScript.defer = true;
+  gmapScript.src =
+    'https://maps.googleapis.com/maps/api/js'
+    + '?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw'
+    + '&region=' + encodeURIComponent(region)
+    + '&language=' + encodeURIComponent(language);
+
+  document.head.appendChild(gmapScript);
+</script>
 </body>
 <footer id="source" style="margin-top: 40px; padding: 10px; background-color: #f1f1f1; border-top: 1px solid #ccc; text-align: center;">
     <small>
