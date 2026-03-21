@@ -97,7 +97,7 @@
         
             // 座標にピンを置く
             coordinates.forEach((coord, index) => {
-                const marker = addMarkerWithContextMenu(coord.lat, coord.lng, map); // ここを変更
+                const marker = addMarkerWithContextMenu(coord.lat, coord.lng, coord.heading, coord.pitch, map); // ここを変更
                 marker.setLabel(`${index + 1}`);
                 markers.push(marker);
                 bounds.extend(marker.getPosition());
@@ -347,7 +347,7 @@ function displayLeaderboard(entries) {
                                     coordinates.push({
                                         lat: coordinate.lat,
                                         lng: coordinate.lng,
-                                        streetViewLink: `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${coordinate.lat},${coordinate.lng}&heading=-${coordinate.heading}&pitch=${coordinate.pitch}`
+                                        streetViewLink: `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${coordinate.lat},${coordinate.lng}&heading=${coordinate.heading}&pitch=${coordinate.pitch}`
                                     });
                                 }
                             });
@@ -411,15 +411,15 @@ function displayLeaderboard(entries) {
         }
 
         // ピンの右クリックイベントにコンテキストメニューを追加
-        function addMarkerWithContextMenu(lat, lng, map) {
+        function addMarkerWithContextMenu(lat, lng, heading, pitch, map) {
             const marker = new google.maps.Marker({
-                position: { lat: lat, lng: lng },
+                position: { lat: lat, lng: lng ,heading: heading, pitch: pitch},
                 map: map,
                 title: `Lat: ${lat}, Lng: ${lng}`
             });
         
             marker.addListener('click', () => {
-                window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`, '_blank');
+                window.open(`https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}&heading=${heading}&pitch=${pitch}`, '_blank');
             });
         
             marker.addListener('rightclick', (event) => {
