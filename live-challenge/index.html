@@ -347,7 +347,7 @@ function displayLeaderboard(entries) {
                                     coordinates.push({
                                         lat: coordinate.lat,
                                         lng: coordinate.lng,
-                                        streetViewLink: `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${coordinate.lat},${coordinate.lng}`
+                                        streetViewLink: `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${coordinate.lat},${coordinate.lng}&heading=-${coordinate.heading}&pitch=${coordinate.pitch}`
                                     });
                                 }
                             });
