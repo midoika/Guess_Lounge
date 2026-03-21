@@ -418,17 +418,19 @@
                     if (data.rounds && Array.isArray(data.rounds)) {
                         data.rounds.forEach(round => {
                             const coordinate = round.answer?.coordinateAnswerPayload?.coordinate;
+                            const panorama = round.question?.panoramaQuestionPayload?.panorama;
+                    
                             if (coordinate) {
                                 coordinates.push({
                                     lat: coordinate.lat,
                                     lng: coordinate.lng,
-                                    heading: coordinate.heading ?? 0,
-                                    pitch: coordinate.pitch ?? 0,
+                                    heading: panorama?.heading ?? 0,
+                                    pitch: panorama?.pitch ?? 0,
                                     streetViewLink: buildStreetViewUrl(
                                         coordinate.lat,
                                         coordinate.lng,
-                                        coordinate.heading ?? 0,
-                                        coordinate.pitch ?? 0
+                                        panorama?.heading ?? 0,
+                                        panorama?.pitch ?? 0
                                     )
                                 });
                             }
