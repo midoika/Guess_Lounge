@@ -98,7 +98,6 @@
         <tr>
           <th data-key="name">Name</th>
           <th data-key="currentScore">Current Score</th>
-                    <th data-key="delta">Delta</th>
           <th data-key="games">Games</th>
           <th data-key="duels">Duels</th>
           <th data-key="wins">Wins</th>
@@ -172,7 +171,6 @@
         multi,
         initialScore,
         currentScore,
-        delta,
         winRate,
         lastOpponent,
         rawData: visibleData
@@ -256,7 +254,6 @@
         <tr>
           <td>${row.geoguessr_profile_url ? `<a href="${buildArchiveLink(row.geoguessr_profile_url)}" target="_blank">${escapeHtml(row.name)}</a>` : escapeHtml(row.name)}</td>
           <td>${formatNumber(row.currentScore)}</td>
-                    <td>${formatSignedNumber(row.delta)}</td>
           <td>${row.games}</td>
           <td>${row.duels}</td>
           <td>${row.wins}</td>
