@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>全プレイヤー戦績一覧</title>
+  <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/6.3.4/firebase-firestore.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.5;
+    }
+    h1 {
+      margin-bottom: 8px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 16px 0;
+      align-items: center;
+    }
+    input, select {
+      padding: 8px;
+      font-size: 14px;
+    }
+    .summary {
+      margin: 8px 0 16px;
+      color: #444;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    th {
+      background: #f4f4f4;
+      cursor: pointer;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    th.sort-asc::after {
+      content: " ▲";
+    }
+    th.sort-desc::after {
+      content: " ▼";
+    }
+    .table-wrap {
+      overflow-x: auto;
+      max-height: 75vh;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+    }
+    a {
+      color: #0645ad;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .muted {
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <h1>全プレイヤー戦績一覧</h1>
+  <div class="summary" id="summary">読み込み中...</div>
+
+  <div class="controls">
+    <label>
+      モード:
+      <select id="modeSelect">
+        <option value="matches">Move</option>
+        <option value="nm">NM</option>
+        <option value="nmpz">NMPZ</option>
+      </select>
+    </label>
+
+    <label>
+      名前検索:
+      <input id="searchInput" type="text" placeholder="プレイヤー名で絞り込み">
+    </label>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th data-key="name">Name</th>
+          <th data-key="currentScore">Current Score</th>
+          <th data-key="initialScore">Initial Score</th>
+          <th data-key="delta">Delta</th>
+          <th data-key="wins">Wins</th>
+          <th data-key="losses">Losses</th>
+          <th data-key="games">Games</th>
+          <th data-key="multi">Multi</th>
+          <th data-key="winRate">Duel Win Rate</th>
+          <th data-key="lastOpponent">Last Opponent</th>
+          <th data-key="details">Details</th>
+        </tr>
+      </thead>
+      <tbody id="playerTableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    firebase.initializeApp({
+      apiKey: 'AIzaSyAnf22xkIpGaLTMNDkjYL-e4ochtbkfYJ4',
+      projectId: 'mido-96308',
+    });
+
+    const db = firebase.firestore();
+    const urlParams = new URLSearchParams(window.location.search);
+    const collectionName = urlParams.get('collection') || 'matches_season_4';
+    const detailBase = urlParams.get('detailBase') || '';
+    const archiveBase = urlParams.get('archiveBase') || 'https://midoika.github.io/Guess_Lounge/archive/season_4/';
+
+    const modeNames = {
+      matches: 'Move',
+      nm: 'NM',
+      nmpz: 'NMPZ'
+    };
+
+    let allPlayers = [];
+    let currentSortKey = 'currentScore';
+    let currentSortDir = 'desc';
+
+    function safeArray(value) {
+      return Array.isArray(value) ? value : [];
+    }
+
+    function calcStats(player, modeKey) {
+      const data = safeArray(player[modeKey]);
+      const judged = data.filter(item => item && (item.result === 'win' || item.result === 'loss'));
+      const wins = judged.filter(item => item.result === 'win').length;
+      const losses = judged.filter(item => item.result === 'loss').length;
+      const games = data.length;
+      const multi = Math.max(0, games - wins - losses);
+      const initialScore = data.length > 0 && typeof data[0].score === 'number' ? data[0].score : null;
+      const currentScore = data.length > 0 && typeof data[data.length - 1].score === 'number'
+        ? data[data.length - 1].score
+        : null;
+      const delta = (initialScore !== null && currentScore !== null) ? (currentScore - initialScore) : null;
+      const winRate = games > 0 ? (wins / games) * 100 : null;
+      const lastOpponent = data.length > 0 && data[data.length - 1].opponent ? data[data.length - 1].opponent : '';
+
+      return {
+        id: player.id,
+        name: player.name || '(no name)',
+        geoguessr_profile_url: player.geoguessr_profile_url || '',
+        wins,
+        losses,
+        games,
+        multi,
+        initialScore,
+        currentScore,
+        delta,
+        winRate,
+        lastOpponent,
+        rawData: data
+      };
+    }
+
+    function compareValues(a, b, key) {
+      const av = a[key];
+      const bv = b[key];
+
+      if (av === null || av === undefined || av === '') return 1;
+      if (bv === null || bv === undefined || bv === '') return -1;
+
+      if (typeof av === 'number' && typeof bv === 'number') {
+        return av - bv;
+      }
+
+      return String(av).localeCompare(String(bv), 'ja');
+    }
+
+    function buildDetailLink(row) {
+      if (!detailBase) {
+        return '<span class="muted">-</span>';
+      }
+      const separator = detailBase.includes('?') ? '&' : '?';
+      return `<a href="${detailBase}${separator}id=${encodeURIComponent(row.id)}" target="_blank">詳細</a>`;
+    }
+
+    function buildArchiveLink(profileUrl) {
+      if (!profileUrl) return '';
+      return `${archiveBase}?url=${encodeURIComponent(profileUrl)}`;
+    }
+
+    function renderTable() {
+      const modeKey = document.getElementById('modeSelect').value;
+      const search = document.getElementById('searchInput').value.trim().toLowerCase();
+
+      let rows = allPlayers.map(player => calcStats(player, modeKey));
+
+      rows = rows.filter(row => String(row.lastOpponent || '').trim().toLowerCase() !== 'default');
+
+      if (search) {
+        rows = rows.filter(row => row.name.toLowerCase().includes(search));
+      }
+
+      rows.sort((a, b) => {
+        const result = compareValues(a, b, currentSortKey);
+        return currentSortDir === 'asc' ? result : -result;
+      });
+
+      const tbody = document.getElementById('playerTableBody');
+      tbody.innerHTML = rows.map(row => `
+        <tr>
+          <td>${row.geoguessr_profile_url ? `<a href="${buildArchiveLink(row.geoguessr_profile_url)}" target="_blank">${escapeHtml(row.name)}</a>` : escapeHtml(row.name)}</td>
+          <td>${formatNumber(row.currentScore)}</td>
+          <td>${formatNumber(row.initialScore)}</td>
+          <td>${formatSignedNumber(row.delta)}</td>
+          <td>${row.wins}</td>
+          <td>${row.losses}</td>
+          <td>${row.games}</td>
+          <td>${row.multi}</td>
+          <td>${row.winRate === null ? '-' : row.winRate.toFixed(1) + '%'}</td>
+          <td>${escapeHtml(row.lastOpponent || '')}</td>
+          <td>${buildDetailLink(row)}</td>
+        </tr>
+      `).join('');
+
+      document.getElementById('summary').textContent =
+        `${collectionName} / ${modeNames[modeKey]} / ${rows.length} players`;
+
+      document.querySelectorAll('th').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (th.dataset.key === currentSortKey) {
+          th.classList.add(currentSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
+      });
+    }
+
+    function formatNumber(value) {
+      return value === null || value === undefined ? '-' : value;
+    }
+
+    function formatSignedNumber(value) {
+      if (value === null || value === undefined) return '-';
+      return value > 0 ? `+${value}` : String(value);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    async function loadPlayers() {
+      try {
+        const snapshot = await db.collection(collectionName).get();
+        allPlayers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderTable();
+      } catch (err) {
+        console.error('Firestore エラー:', err);
+        document.getElementById('summary').textContent = 'データ取得中にエラーが発生しました。';
+      }
+    }
+
+    document.getElementById('modeSelect').addEventListener('change', renderTable);
+    document.getElementById('searchInput').addEventListener('input', renderTable);
+
+    document.querySelectorAll('th[data-key]').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.key;
+        if (key === 'details') return;
+        if (currentSortKey === key) {
+          currentSortDir = currentSortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSortKey = key;
+          currentSortDir = (key === 'name' || key === 'lastOpponent') ? 'asc' : 'desc';
+        }
+        renderTable();
+      });
+    });
+
+    loadPlayers();
+  </script>
+</body>
+</html>
