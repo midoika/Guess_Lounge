@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -99,14 +98,14 @@
         <tr>
           <th data-key="name">Name</th>
           <th data-key="currentScore">Current Score</th>
-          <th data-key="initialScore">Initial Score</th>
-          <th data-key="delta">Delta</th>
+                    <th data-key="delta">Delta</th>
+          <th data-key="games">Games</th>
+          <th data-key="duels">Duels</th>
           <th data-key="wins">Wins</th>
           <th data-key="losses">Losses</th>
-          <th data-key="games">Games</th>
-          <th data-key="multi">Multi</th>
           <th data-key="winRate">Duel Win Rate</th>
           <th data-key="lastOpponent">Last Opponent</th>
+          <th data-key="multi">Multi</th>
           <th data-key="details">Details</th>
         </tr>
       </thead>
@@ -151,7 +150,8 @@
       const wins = judged.filter(item => item.result === 'win').length;
       const losses = judged.filter(item => item.result === 'loss').length;
       const games = visibleData.length;
-      const multi = Math.max(0, games - wins - losses);
+      const duels = wins + losses;
+      const multi = Math.max(0, games - duels);
       const initialScore = visibleData.length > 0 && typeof visibleData[0].score === 'number' ? visibleData[0].score : null;
       const currentScore = visibleData.length > 0 && typeof visibleData[visibleData.length - 1].score === 'number'
         ? visibleData[visibleData.length - 1].score
@@ -165,9 +165,10 @@
         id: player.id,
         name: player.name || '(no name)',
         geoguessr_profile_url: player.geoguessr_profile_url || '',
+        games,
+        duels,
         wins,
         losses,
-        games,
         multi,
         initialScore,
         currentScore,
@@ -255,14 +256,14 @@
         <tr>
           <td>${row.geoguessr_profile_url ? `<a href="${buildArchiveLink(row.geoguessr_profile_url)}" target="_blank">${escapeHtml(row.name)}</a>` : escapeHtml(row.name)}</td>
           <td>${formatNumber(row.currentScore)}</td>
-          <td>${formatNumber(row.initialScore)}</td>
-          <td>${formatSignedNumber(row.delta)}</td>
+                    <td>${formatSignedNumber(row.delta)}</td>
+          <td>${row.games}</td>
+          <td>${row.duels}</td>
           <td>${row.wins}</td>
           <td>${row.losses}</td>
-          <td>${row.games}</td>
-          <td>${row.multi}</td>
           <td>${row.winRate === null ? '-' : row.winRate.toFixed(1) + '%'}</td>
           <td>${escapeHtml(row.lastOpponent || '')}</td>
+          <td>${row.multi}</td>
           <td>${buildDetailLink(row)}</td>
         </tr>
       `).join('');
