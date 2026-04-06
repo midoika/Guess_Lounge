@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -139,20 +140,26 @@
       return Array.isArray(value) ? value : [];
     }
 
+    function isDefaultOpponent(item) {
+      return String(item && item.opponent ? item.opponent : '').trim().toLowerCase() === 'default';
+    }
+
     function calcStats(player, modeKey) {
       const data = safeArray(player[modeKey]);
-      const judged = data.filter(item => item && (item.result === 'win' || item.result === 'loss'));
+      const visibleData = data.filter(item => item && !isDefaultOpponent(item));
+      const judged = visibleData.filter(item => item.result === 'win' || item.result === 'loss');
       const wins = judged.filter(item => item.result === 'win').length;
       const losses = judged.filter(item => item.result === 'loss').length;
-      const games = data.length;
+      const games = visibleData.length;
       const multi = Math.max(0, games - wins - losses);
-      const initialScore = data.length > 0 && typeof data[0].score === 'number' ? data[0].score : null;
-      const currentScore = data.length > 0 && typeof data[data.length - 1].score === 'number'
-        ? data[data.length - 1].score
+      const initialScore = visibleData.length > 0 && typeof visibleData[0].score === 'number' ? visibleData[0].score : null;
+      const currentScore = visibleData.length > 0 && typeof visibleData[visibleData.length - 1].score === 'number'
+        ? visibleData[visibleData.length - 1].score
         : null;
       const delta = (initialScore !== null && currentScore !== null) ? (currentScore - initialScore) : null;
-      const winRate = games > 0 ? (wins / games) * 100 : null;
-      const lastOpponent = data.length > 0 && data[data.length - 1].opponent ? data[data.length - 1].opponent : '';
+      const duelCount = wins + losses;
+      const winRate = duelCount > 0 ? (wins / duelCount) * 100 : null;
+      const lastOpponent = visibleData.length > 0 && visibleData[visibleData.length - 1].opponent ? visibleData[visibleData.length - 1].opponent : '';
 
       return {
         id: player.id,
@@ -167,8 +174,35 @@
         delta,
         winRate,
         lastOpponent,
-        rawData: data
+        rawData: visibleData
       };
+    }
+
+    function dedupeRows(rows) {
+      const map = new Map();
+      for (const row of rows) {
+        const key = row.geoguessr_profile_url || row.name;
+        const prev = map.get(key);
+        if (!prev) {
+          map.set(key, row);
+          continue;
+        }
+
+        const prevLen = prev.rawData.length;
+        const rowLen = row.rawData.length;
+        if (rowLen > prevLen) {
+          map.set(key, row);
+          continue;
+        }
+        if (rowLen === prevLen) {
+          const prevScore = prev.currentScore ?? -Infinity;
+          const rowScore = row.currentScore ?? -Infinity;
+          if (rowScore > prevScore) {
+            map.set(key, row);
+          }
+        }
+      }
+      return Array.from(map.values());
     }
 
     function compareValues(a, b, key) {
@@ -204,7 +238,8 @@
 
       let rows = allPlayers.map(player => calcStats(player, modeKey));
 
-      rows = rows.filter(row => String(row.lastOpponent || '').trim().toLowerCase() !== 'default');
+      rows = rows.filter(row => row.games > 0);
+      rows = dedupeRows(rows);
 
       if (search) {
         rows = rows.filter(row => row.name.toLowerCase().includes(search));
