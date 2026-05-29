@@ -49,6 +49,7 @@
 
     <div id="map"></div>
 
+    <button id="toggleMapLabelButton">ラベル非表示</button>
     <button id="toggleMeshButton">Hokkaido Mesh</button>
     <button id="togglePolygonButton">境界表示</button>
 
@@ -75,6 +76,15 @@
 
         let map;
         let markers = [];
+        let mapLabelsVisible = true;
+
+        const defaultMapStyle = [];
+        const hideMapLabelsStyle = [
+            {
+                elementType: 'labels',
+                stylers: [{ visibility: 'off' }]
+            }
+        ];
 
         const activeMarkers = {};
         const activePolylines = {};
@@ -185,7 +195,8 @@
                     ? { lat: coordinates[0].lat, lng: coordinates[0].lng }
                     : { lat: 35.6895, lng: 139.6917 },
                 streetViewControl: false,
-                gestureHandling: 'greedy'
+                gestureHandling: 'greedy',
+                styles: mapLabelsVisible ? defaultMapStyle : hideMapLabelsStyle
             });
 
             markers.forEach(marker => marker.setMap(null));
@@ -459,6 +470,22 @@
         } else {
             alert('コレクション名またはドキュメントIDが指定されていません。');
         }
+
+        document.getElementById('toggleMapLabelButton').addEventListener('click', () => {
+            if (!map) {
+                alert('地図がまだ初期化されていません。');
+                return;
+            }
+
+            mapLabelsVisible = !mapLabelsVisible;
+
+            map.setOptions({
+                styles: mapLabelsVisible ? defaultMapStyle : hideMapLabelsStyle
+            });
+
+            document.getElementById('toggleMapLabelButton').textContent =
+                mapLabelsVisible ? 'ラベル非表示' : 'ラベル表示';
+        });
 
         document.addEventListener('click', () => {
             contextMenu.style.display = 'none';
