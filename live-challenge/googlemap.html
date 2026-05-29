@@ -50,6 +50,7 @@
     <div id="map"></div>
 
     <button id="toggleMapLabelButton">ラベル非表示</button>
+    <button id="toggleMapLanguageButton">Map: English</button>
     <button id="toggleMeshButton">Hokkaido Mesh</button>
     <button id="togglePolygonButton">境界表示</button>
 
@@ -73,6 +74,9 @@
         const params = new URLSearchParams(window.location.search);
         const collectionName = params.get('collection');
         const documentId = params.get('document');
+
+        const mapLanguage = params.get('lang') === 'en' ? 'en' : 'ja';
+        document.documentElement.lang = mapLanguage;
 
         let map;
         let markers = [];
@@ -487,6 +491,22 @@
                 mapLabelsVisible ? 'ラベル非表示' : 'ラベル表示';
         });
 
+        document.getElementById('toggleMapLanguageButton').textContent =
+            mapLanguage === 'en' ? 'Map: 日本語' : 'Map: English';
+
+        document.getElementById('toggleMapLanguageButton').addEventListener('click', () => {
+            const nextLanguage = mapLanguage === 'en' ? 'ja' : 'en';
+            const nextParams = new URLSearchParams(window.location.search);
+
+            if (nextLanguage === 'ja') {
+                nextParams.delete('lang');
+            } else {
+                nextParams.set('lang', nextLanguage);
+            }
+
+            window.location.search = nextParams.toString();
+        });
+
         document.addEventListener('click', () => {
             contextMenu.style.display = 'none';
         });
@@ -533,8 +553,12 @@
         });
     </script>
 
-    <script async defer
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw&region=JP&callback=initMap">
+    <script>
+        const googleMapsScript = document.createElement('script');
+        googleMapsScript.async = true;
+        googleMapsScript.defer = true;
+        googleMapsScript.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyC8sDv6Rv--uFqQUI8zi1PDmQSJbFaC_Jw&region=JP&language=${mapLanguage}&callback=initMap`;
+        document.head.appendChild(googleMapsScript);
     </script>
 </body>
 
