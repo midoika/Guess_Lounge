@@ -68,13 +68,17 @@
         }
         
         .score-cell {
-            display: inline-block;
-            padding: 3px 6px;
-            border: 1px solid #ccc;
-            background-color: #fff;
-            border-radius: 4px;
             cursor: pointer;
-            white-space: nowrap;
+            justify-content: center;
+        
+            flex-direction: column;
+            gap: 2px;
+        
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            line-height: 1.25;
+            text-align: center;
         }
         
         .score-cell:hover {
@@ -189,8 +193,9 @@
         }
         
         .round-time {
+            display: block;
             font-size: smaller;
-            margin-left: 3px;
+            margin-left: 0;
             white-space: nowrap;
         }
     </style>
