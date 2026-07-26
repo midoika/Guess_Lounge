@@ -353,6 +353,13 @@
                 scoreAndTimeSpan.style.cursor = 'pointer';
                 scoreAndTimeSpan.textContent = `: ${entry.totalScore}pts (${entry.totalTime}s)`;
 
+                const isAllRounds5000 = entry.guesses?.length > 0 &&
+                    entry.guesses.every(guess => Number(guess.score) === 5000);
+
+                if (isAllRounds5000) {
+                    scoreAndTimeSpan.style.fontWeight = 'bold';
+                }
+
                 scoreAndTimeSpan.addEventListener('click', () => {
                     const scores = playerDiv.querySelectorAll('.round-score');
                     scores.forEach(score => score.click());
@@ -382,6 +389,10 @@
                 entry.guesses.forEach(guess => {
                     const roundScore = document.createElement('span');
                     roundScore.textContent = ` R${guess.roundNumber}: ${guess.score}pts`;
+
+                    if (Number(guess.score) === 5000) {
+                        roundScore.style.fontWeight = 'bold';
+                    }
 
                     const timeSpan = document.createElement('span');
                     timeSpan.textContent = `(${guess.time}s) `;
@@ -434,7 +445,7 @@
                         data.rounds.forEach(round => {
                             const coordinate = round.answer?.coordinateAnswerPayload?.coordinate;
                             const panorama = round.question?.panoramaQuestionPayload?.panorama;
-                    
+
                             if (coordinate) {
                                 coordinates.push({
                                     lat: coordinate.lat,
