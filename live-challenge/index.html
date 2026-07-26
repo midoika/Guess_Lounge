@@ -37,6 +37,201 @@
             height: 40px;
             margin-right: 10px;
         }
+        .name-link {
+            display: inline-block;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: bottom;
+        }
+        
+        .name-link:hover {
+            max-width: none;
+            overflow: visible;
+            background-color: #f9f9f9;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .name-and-score {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        .round-scores {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        .score-cell {
+            cursor: pointer;
+            justify-content: center;
+        
+            flex-direction: column;
+            gap: 2px;
+        
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            line-height: 1.25;
+            text-align: center;
+        }
+        
+        .score-cell:hover {
+            background-color: #eef5ff;
+        }
+        
+        .score-cell.active {
+            color: yellowgreen;
+            border-color: yellowgreen;
+            background-color: #f6fff0;
+        }
+        
+        .total-score {
+            cursor: pointer;
+            white-space: normal;
+            justify-content: center;
+            flex-direction: column;
+            gap: 2px;
+            line-height: 1.25;
+            text-align: center;
+        }
+        .total-time {
+            display: block;
+            font-size: smaller;
+            white-space: nowrap;
+        }
+
+        .leaderboard-scrollbar {
+            overflow-x: auto;
+            overflow-y: hidden;
+            height: 18px;
+            margin-bottom: 4px;
+        }
+        
+        .leaderboard-scrollbar-content {
+            height: 1px;
+        }
+        
+        .leaderboard-table-scroll {
+            overflow-x: auto;
+        }
+        
+        .leaderboard-table {
+            display: grid;
+            grid-template-columns:
+                55px
+                50px
+                minmax(120px, 220px)
+                minmax(120px, 160px)
+                repeat(var(--round-count), minmax(130px, 1fr));
+            gap: 2px;
+            align-items: stretch;
+            width: max-content;
+            min-width: 100%;
+        }
+        
+        .leaderboard-header {
+            display: contents;
+            font-weight: bold;
+        }
+        
+        .leaderboard-row {
+            display: contents;
+        }
+        
+        .leaderboard-cell {
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            min-height: 42px;
+            box-sizing: border-box;
+        
+            min-width: 0;
+            overflow: hidden;
+        }
+        
+        .leaderboard-header .leaderboard-cell {
+            background-color: #e9e9e9;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .round-time {
+            display: block;
+            font-size: smaller;
+            margin-left: 0;
+            white-space: nowrap;
+        }
+
+        .round-header {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .round-header:hover {
+            background-color: #dcefd6;
+        }
+        
+        .rank-cell {
+            justify-content: center;
+            white-space: nowrap;
+        }
+        
+        .avatar-cell {
+            justify-content: center;
+        }
+        
+        .name-cell {
+            min-width: 0;
+        }
+        
+        .name-link {
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: bottom;
+        }
+        
+        .name-link:hover {
+            overflow: visible;
+            white-space: nowrap;
+            background-color: #fff;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
+        }
+        
+        .score-cell {
+            cursor: pointer;
+            justify-content: center;
+        
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            line-height: 1.25;
+            text-align: center;
+        }
+        
+        .score-cell:hover {
+            background-color: #eef5ff;
+        }
+        
+        .score-cell.active {
+            color: yellowgreen;
+            border-color: yellowgreen;
+            background-color: #f6fff0;
+        }
+        
+
     </style>
 </head>
 
@@ -318,12 +513,93 @@
         function displayLeaderboard(entries) {
             const leaderboardContainer = document.getElementById('leaderboardEntries');
             leaderboardContainer.innerHTML = '';
-
+        
+            const maxRoundNumber = Math.max(
+                0,
+                ...entries.flatMap(entry =>
+                    Array.isArray(entry.guesses)
+                        ? entry.guesses.map(guess => Number(guess.roundNumber) || 0)
+                        : []
+                )
+            );
+        
+            const topScrollbar = document.createElement('div');
+            topScrollbar.className = 'leaderboard-scrollbar';
+        
+            const topScrollbarContent = document.createElement('div');
+            topScrollbarContent.className = 'leaderboard-scrollbar-content';
+            topScrollbar.appendChild(topScrollbarContent);
+        
+            const tableScroll = document.createElement('div');
+            tableScroll.className = 'leaderboard-table-scroll';
+        
+            const table = document.createElement('div');
+            table.className = 'leaderboard-table';
+            table.style.setProperty('--round-count', maxRoundNumber);
+        
+            const header = document.createElement('div');
+            header.className = 'leaderboard-header';
+        
+            const headerCells = ['Rank', 'Icon', 'Name', 'Total'];
+        
+            headerCells.forEach(text => {
+                const cell = document.createElement('div');
+                cell.className = 'leaderboard-cell';
+                cell.textContent = text;
+                header.appendChild(cell);
+            });
+        
+            for (let roundNumber = 1; roundNumber <= maxRoundNumber; roundNumber++) {
+                const cell = document.createElement('div');
+                cell.className = 'leaderboard-cell round-header';
+                cell.textContent = `Round ${roundNumber}`;
+                cell.dataset.roundNumber = String(roundNumber);
+                cell.title = `Round ${roundNumber} の全員分のゲス地点を表示/非表示`;
+        
+                cell.addEventListener('click', () => {
+                    const roundCells = table.querySelectorAll(
+                        `.round-score[data-round-number="${roundNumber}"]`
+                    );
+        
+                    const clickableRoundCells = Array.from(roundCells).filter(roundCell =>
+                        !roundCell.classList.contains('empty-score')
+                    );
+        
+                    if (clickableRoundCells.length === 0) {
+                        return;
+                    }
+        
+                    const allActive = clickableRoundCells.every(roundCell =>
+                        roundCell.classList.contains('active')
+                    );
+        
+                    if (allActive) {
+                        clickableRoundCells.forEach(roundCell => {
+                            if (roundCell.classList.contains('active')) {
+                                roundCell.click();
+                            }
+                        });
+                    } else {
+                        clickableRoundCells.forEach(roundCell => {
+                            if (!roundCell.classList.contains('active')) {
+                                roundCell.click();
+                            }
+                        });
+                    }
+                });
+        
+                header.appendChild(cell);
+            }
+        
+            table.appendChild(header);
+        
             entries.forEach((entry, index) => {
-                const playerDiv = document.createElement('div');
-                playerDiv.className = 'player';
-
-                const rankSpan = document.createElement('span');
+                const row = document.createElement('div');
+                row.className = 'leaderboard-row';
+        
+                const rankCell = document.createElement('div');
+                rankCell.className = 'leaderboard-cell rank-cell';
+        
                 let rankText = '';
                 if (index === 0) {
                     rankText = '1st';
@@ -334,99 +610,152 @@
                 } else {
                     rankText = `${index + 1}th`;
                 }
-                rankSpan.textContent = rankText + ' ';
-                rankSpan.className = 'rank';
-
+        
+                rankCell.textContent = rankText;
+        
+                const avatarCell = document.createElement('div');
+                avatarCell.className = 'leaderboard-cell avatar-cell';
+        
                 const avatar = document.createElement('img');
                 avatar.src = "https://www.geoguessr.com/images/plain/" + entry.avatarPath;
                 avatar.className = 'avatar';
-
-                const nameAndScore = document.createElement('div');
-
+                avatarCell.appendChild(avatar);
+        
+                const nameCell = document.createElement('div');
+                nameCell.className = 'leaderboard-cell name-cell';
+        
                 const nameLink = document.createElement('a');
                 nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;
                 nameLink.textContent = entry.name;
+                nameLink.title = entry.name;
                 nameLink.className = 'name-link';
-                nameAndScore.appendChild(nameLink);
-
-                const scoreAndTimeSpan = document.createElement('span');
-                scoreAndTimeSpan.style.cursor = 'pointer';
-                scoreAndTimeSpan.textContent = `: ${entry.totalScore}pts (${entry.totalTime}s)`;
-
-                const isAllRounds5000 = entry.guesses?.length > 0 &&
-                    entry.guesses.every(guess => Number(guess.score) === 5000);
-
+                nameCell.appendChild(nameLink);
+        
+                const guesses = Array.isArray(entry.guesses) ? entry.guesses : [];
+        
+                const totalCell = document.createElement('div');
+                totalCell.className = 'leaderboard-cell total-score';
+        
+                const totalScoreSpan = document.createElement('span');
+                totalScoreSpan.textContent = `${entry.totalScore}pts`;
+        
+                const totalTimeSpan = document.createElement('span');
+                totalTimeSpan.textContent = `(${entry.totalTime}s)`;
+                totalTimeSpan.className = 'total-time';
+        
+                totalCell.appendChild(totalScoreSpan);
+                totalCell.appendChild(totalTimeSpan);
+        
+                const isAllRounds5000 = guesses.length > 0 &&
+                    guesses.every(guess => Number(guess.score) === 5000);
+        
                 if (isAllRounds5000) {
-                    scoreAndTimeSpan.style.fontWeight = 'bold';
+                    totalCell.style.fontWeight = 'bold';
                 }
-
-                scoreAndTimeSpan.addEventListener('click', () => {
-                    const scores = playerDiv.querySelectorAll('.round-score');
+        
+                totalCell.addEventListener('click', () => {
+                    const scores = row.querySelectorAll('.round-score');
                     scores.forEach(score => score.click());
-
+        
                     const bounds = new google.maps.LatLngBounds();
-
-                    entry.guesses.forEach(guess => {
+        
+                    guesses.forEach(guess => {
                         if (guess.lat != null && guess.lng != null) {
                             bounds.extend(new google.maps.LatLng(guess.lat, guess.lng));
                         }
                     });
-
+        
                     if (!bounds.isEmpty()) {
                         map.fitBounds(bounds);
                     }
                 });
-
-                nameAndScore.appendChild(scoreAndTimeSpan);
-
-                const equalsSpan = document.createElement('span');
-                equalsSpan.textContent = ' = ';
-                nameAndScore.appendChild(equalsSpan);
-
-                const roundScores = document.createElement('span');
-                roundScores.className = 'round-scores';
-
-                entry.guesses.forEach(guess => {
-                    const roundScore = document.createElement('span');
-                    roundScore.textContent = ` R${guess.roundNumber}: ${guess.score}pts`;
-
-                    if (Number(guess.score) === 5000) {
-                        roundScore.style.fontWeight = 'bold';
+        
+                row.appendChild(rankCell);
+                row.appendChild(avatarCell);
+                row.appendChild(nameCell);
+                row.appendChild(totalCell);
+        
+                for (let roundNumber = 1; roundNumber <= maxRoundNumber; roundNumber++) {
+                    const guess = guesses.find(g => Number(g.roundNumber) === roundNumber);
+        
+                    const roundCell = document.createElement('div');
+                    roundCell.className = 'leaderboard-cell score-cell round-score';
+                    roundCell.dataset.roundNumber = String(roundNumber);
+        
+                    if (!guess) {
+                        roundCell.textContent = '-';
+                        roundCell.classList.add('empty-score');
+                        row.appendChild(roundCell);
+                        continue;
                     }
-
+        
+                    const scoreTextSpan = document.createElement('span');
+                    scoreTextSpan.textContent = `R${guess.roundNumber}: ${guess.score}pts`;
+        
                     const timeSpan = document.createElement('span');
-                    timeSpan.textContent = `(${guess.time}s) `;
-                    timeSpan.style.fontSize = 'smaller';
-
-                    roundScore.appendChild(timeSpan);
-                    roundScore.className = 'round-score';
-
-                    roundScore.addEventListener('click', () => {
+                    timeSpan.textContent = `(${guess.time}s)`;
+                    timeSpan.className = 'round-time';
+        
+                    roundCell.appendChild(scoreTextSpan);
+                    roundCell.appendChild(timeSpan);
+        
+                    if (Number(guess.score) === 5000) {
+                        roundCell.style.fontWeight = 'bold';
+                    }
+        
+                    roundCell.addEventListener('click', () => {
                         const result = toggleMarkerWithAvatar(
                             guess.lat,
                             guess.lng,
                             avatar.src,
                             guess.roundNumber
                         );
-
+        
                         if (result) {
-                            roundScore.style.color = 'yellowgreen';
+                            roundCell.classList.add('active');
                         } else {
-                            roundScore.style.color = '';
+                            roundCell.classList.remove('active');
                         }
                     });
-
-                    roundScores.appendChild(roundScore);
-                });
-
-                playerDiv.appendChild(rankSpan);
-                playerDiv.appendChild(avatar);
-                playerDiv.appendChild(nameAndScore);
-                playerDiv.appendChild(roundScores);
-                leaderboardContainer.appendChild(playerDiv);
+        
+                    row.appendChild(roundCell);
+                }
+        
+                table.appendChild(row);
+            });
+        
+            tableScroll.appendChild(table);
+        
+            leaderboardContainer.appendChild(topScrollbar);
+            leaderboardContainer.appendChild(tableScroll);
+        
+            let isSyncingScroll = false;
+        
+            topScrollbar.addEventListener('scroll', () => {
+                if (isSyncingScroll) {
+                    return;
+                }
+        
+                isSyncingScroll = true;
+                tableScroll.scrollLeft = topScrollbar.scrollLeft;
+                isSyncingScroll = false;
+            });
+        
+            tableScroll.addEventListener('scroll', () => {
+                if (isSyncingScroll) {
+                    return;
+                }
+        
+                isSyncingScroll = true;
+                topScrollbar.scrollLeft = tableScroll.scrollLeft;
+                isSyncingScroll = false;
+            });
+        
+            requestAnimationFrame(() => {
+                topScrollbarContent.style.width = `${table.scrollWidth}px`;
             });
         }
-
+        
         if (collectionName && documentId) {
             db.collection(collectionName).doc(documentId)
                 .get()
