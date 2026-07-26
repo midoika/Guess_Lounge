@@ -92,7 +92,12 @@
         }
         .leaderboard-table {
             display: grid;
-            grid-template-columns: 55px 50px minmax(120px, 220px) minmax(120px, 160px) repeat(var(--round-count), minmax(115px, 1fr));
+            grid-template-columns:
+                55px
+                50px
+                minmax(120px, 220px)
+                minmax(120px, 160px)
+                repeat(var(--round-count), minmax(125px, 1fr));
             gap: 2px;
             align-items: stretch;
             overflow-x: auto;
@@ -115,6 +120,9 @@
             align-items: center;
             min-height: 42px;
             box-sizing: border-box;
+        
+            min-width: 0;
+            overflow: hidden;
         }
         
         .leaderboard-header .leaderboard-cell {
@@ -161,8 +169,13 @@
         
         .score-cell {
             cursor: pointer;
-            white-space: nowrap;
             justify-content: center;
+        
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            line-height: 1.25;
+            text-align: center;
         }
         
         .score-cell:hover {
@@ -173,6 +186,12 @@
             color: yellowgreen;
             border-color: yellowgreen;
             background-color: #f6fff0;
+        }
+        
+        .round-time {
+            font-size: smaller;
+            margin-left: 3px;
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -579,8 +598,7 @@
         
                     const timeSpan = document.createElement('span');
                     timeSpan.textContent = ` (${guess.time}s)`;
-                    timeSpan.style.fontSize = 'smaller';
-                    timeSpan.style.marginLeft = '3px';
+                    timeSpan.className = 'round-time';
         
                     roundCell.appendChild(timeSpan);
         
