@@ -559,7 +559,16 @@
         
                 const totalCell = document.createElement('div');
                 totalCell.className = 'leaderboard-cell total-score';
-                totalCell.textContent = `${entry.totalScore}pts (${entry.totalTime}s)`;
+                
+                const totalScoreSpan = document.createElement('span');
+                totalScoreSpan.textContent = `${entry.totalScore}pts`;
+                
+                const totalTimeSpan = document.createElement('span');
+                totalTimeSpan.textContent = `(${entry.totalTime}s)`;
+                totalTimeSpan.className = 'total-time';
+                
+                totalCell.appendChild(totalScoreSpan);
+                totalCell.appendChild(totalTimeSpan);
         
                 const guesses = Array.isArray(entry.guesses) ? entry.guesses : [];
         
@@ -606,10 +615,14 @@
         
                     roundCell.textContent = `R${guess.roundNumber}: ${guess.score}pts`;
         
+                    const scoreTextSpan = document.createElement('span');
+                    scoreTextSpan.textContent = `R${guess.roundNumber}: ${guess.score}pts`;
+                    
                     const timeSpan = document.createElement('span');
-                    timeSpan.textContent = ` (${guess.time}s)`;
+                    timeSpan.textContent = `(${guess.time}s)`;
                     timeSpan.className = 'round-time';
-        
+                    
+                    roundCell.appendChild(scoreTextSpan);
                     roundCell.appendChild(timeSpan);
         
                     if (Number(guess.score) === 5000) {
