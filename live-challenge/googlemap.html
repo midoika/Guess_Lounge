@@ -37,6 +37,59 @@
             height: 40px;
             margin-right: 10px;
         }
+        .name-link {
+            display: inline-block;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: bottom;
+        }
+        
+        .name-link:hover {
+            max-width: none;
+            overflow: visible;
+            background-color: #f9f9f9;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .name-and-score {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        .round-scores {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        .score-cell {
+            display: inline-block;
+            padding: 3px 6px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        .score-cell:hover {
+            background-color: #eef5ff;
+        }
+        
+        .score-cell.active {
+            color: yellowgreen;
+            border-color: yellowgreen;
+        }
+        
+        .total-score {
+            cursor: pointer;
+            white-space: nowrap;
+        }
     </style>
 </head>
 
@@ -318,11 +371,11 @@
         function displayLeaderboard(entries) {
             const leaderboardContainer = document.getElementById('leaderboardEntries');
             leaderboardContainer.innerHTML = '';
-
+        
             entries.forEach((entry, index) => {
                 const playerDiv = document.createElement('div');
                 playerDiv.className = 'player';
-
+        
                 const rankSpan = document.createElement('span');
                 let rankText = '';
                 if (index === 0) {
@@ -336,71 +389,73 @@
                 }
                 rankSpan.textContent = rankText + ' ';
                 rankSpan.className = 'rank';
-
+        
                 const avatar = document.createElement('img');
                 avatar.src = "https://www.geoguessr.com/images/plain/" + entry.avatarPath;
                 avatar.className = 'avatar';
-
+        
                 const nameAndScore = document.createElement('div');
-
+                nameAndScore.className = 'name-and-score';
+        
                 const nameLink = document.createElement('a');
                 nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;
                 nameLink.textContent = entry.name;
+                nameLink.title = entry.name;
                 nameLink.className = 'name-link';
                 nameAndScore.appendChild(nameLink);
-
+        
                 const scoreAndTimeSpan = document.createElement('span');
-                scoreAndTimeSpan.style.cursor = 'pointer';
+                scoreAndTimeSpan.className = 'total-score';
                 scoreAndTimeSpan.textContent = `: ${entry.totalScore}pts (${entry.totalTime}s)`;
-
+        
                 const isAllRounds5000 = entry.guesses?.length > 0 &&
                     entry.guesses.every(guess => Number(guess.score) === 5000);
-
+        
                 if (isAllRounds5000) {
                     scoreAndTimeSpan.style.fontWeight = 'bold';
                 }
-
+        
                 scoreAndTimeSpan.addEventListener('click', () => {
                     const scores = playerDiv.querySelectorAll('.round-score');
                     scores.forEach(score => score.click());
-
+        
                     const bounds = new google.maps.LatLngBounds();
-
+        
                     entry.guesses.forEach(guess => {
                         if (guess.lat != null && guess.lng != null) {
                             bounds.extend(new google.maps.LatLng(guess.lat, guess.lng));
                         }
                     });
-
+        
                     if (!bounds.isEmpty()) {
                         map.fitBounds(bounds);
                     }
                 });
-
+        
                 nameAndScore.appendChild(scoreAndTimeSpan);
-
+        
                 const equalsSpan = document.createElement('span');
                 equalsSpan.textContent = ' = ';
                 nameAndScore.appendChild(equalsSpan);
-
+        
                 const roundScores = document.createElement('span');
                 roundScores.className = 'round-scores';
-
+        
                 entry.guesses.forEach(guess => {
                     const roundScore = document.createElement('span');
-                    roundScore.textContent = ` R${guess.roundNumber}: ${guess.score}pts`;
-
+                    roundScore.className = 'round-score score-cell';
+                    roundScore.textContent = `R${guess.roundNumber}: ${guess.score}pts`;
+        
                     if (Number(guess.score) === 5000) {
                         roundScore.style.fontWeight = 'bold';
                     }
-
+        
                     const timeSpan = document.createElement('span');
-                    timeSpan.textContent = `(${guess.time}s) `;
+                    timeSpan.textContent = ` (${guess.time}s)`;
                     timeSpan.style.fontSize = 'smaller';
-
+        
                     roundScore.appendChild(timeSpan);
-                    roundScore.className = 'round-score';
-
+        
                     roundScore.addEventListener('click', () => {
                         const result = toggleMarkerWithAvatar(
                             guess.lat,
@@ -408,17 +463,17 @@
                             avatar.src,
                             guess.roundNumber
                         );
-
+        
                         if (result) {
-                            roundScore.style.color = 'yellowgreen';
+                            roundScore.classList.add('active');
                         } else {
-                            roundScore.style.color = '';
+                            roundScore.classList.remove('active');
                         }
                     });
-
+        
                     roundScores.appendChild(roundScore);
                 });
-
+        
                 playerDiv.appendChild(rankSpan);
                 playerDiv.appendChild(avatar);
                 playerDiv.appendChild(nameAndScore);
