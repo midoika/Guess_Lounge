@@ -90,6 +90,90 @@
             cursor: pointer;
             white-space: nowrap;
         }
+        .leaderboard-table {
+            display: grid;
+            grid-template-columns: 55px 50px minmax(120px, 220px) minmax(120px, 160px) repeat(var(--round-count), minmax(115px, 1fr));
+            gap: 2px;
+            align-items: stretch;
+            overflow-x: auto;
+        }
+        
+        .leaderboard-header {
+            display: contents;
+            font-weight: bold;
+        }
+        
+        .leaderboard-row {
+            display: contents;
+        }
+        
+        .leaderboard-cell {
+            padding: 6px 8px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+            min-height: 42px;
+            box-sizing: border-box;
+        }
+        
+        .leaderboard-header .leaderboard-cell {
+            background-color: #e9e9e9;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .rank-cell {
+            justify-content: center;
+            white-space: nowrap;
+        }
+        
+        .avatar-cell {
+            justify-content: center;
+        }
+        
+        .name-cell {
+            min-width: 0;
+        }
+        
+        .name-link {
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: bottom;
+        }
+        
+        .name-link:hover {
+            overflow: visible;
+            white-space: nowrap;
+            background-color: #fff;
+            position: relative;
+            z-index: 10;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.25);
+        }
+        
+        .total-score {
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        
+        .score-cell {
+            cursor: pointer;
+            white-space: nowrap;
+            justify-content: center;
+        }
+        
+        .score-cell:hover {
+            background-color: #eef5ff;
+        }
+        
+        .score-cell.active {
+            color: yellowgreen;
+            border-color: yellowgreen;
+            background-color: #f6fff0;
+        }
     </style>
 </head>
 
@@ -372,11 +456,47 @@
             const leaderboardContainer = document.getElementById('leaderboardEntries');
             leaderboardContainer.innerHTML = '';
         
-            entries.forEach((entry, index) => {
-                const playerDiv = document.createElement('div');
-                playerDiv.className = 'player';
+            const maxRoundNumber = Math.max(
+                0,
+                ...entries.flatMap(entry =>
+                    Array.isArray(entry.guesses)
+                        ? entry.guesses.map(guess => Number(guess.roundNumber) || 0)
+                        : []
+                )
+            );
         
-                const rankSpan = document.createElement('span');
+            const table = document.createElement('div');
+            table.className = 'leaderboard-table';
+            table.style.setProperty('--round-count', maxRoundNumber);
+        
+            const header = document.createElement('div');
+            header.className = 'leaderboard-header';
+        
+            const headerCells = ['Rank', 'Icon', 'Name', 'Total'];
+        
+            headerCells.forEach(text => {
+                const cell = document.createElement('div');
+                cell.className = 'leaderboard-cell';
+                cell.textContent = text;
+                header.appendChild(cell);
+            });
+        
+            for (let roundNumber = 1; roundNumber <= maxRoundNumber; roundNumber++) {
+                const cell = document.createElement('div');
+                cell.className = 'leaderboard-cell';
+                cell.textContent = `Round ${roundNumber}`;
+                header.appendChild(cell);
+            }
+        
+            table.appendChild(header);
+        
+            entries.forEach((entry, index) => {
+                const row = document.createElement('div');
+                row.className = 'leaderboard-row';
+        
+                const rankCell = document.createElement('div');
+                rankCell.className = 'leaderboard-cell rank-cell';
+        
                 let rankText = '';
                 if (index === 0) {
                     rankText = '1st';
@@ -387,41 +507,47 @@
                 } else {
                     rankText = `${index + 1}th`;
                 }
-                rankSpan.textContent = rankText + ' ';
-                rankSpan.className = 'rank';
+        
+                rankCell.textContent = rankText;
+        
+                const avatarCell = document.createElement('div');
+                avatarCell.className = 'leaderboard-cell avatar-cell';
         
                 const avatar = document.createElement('img');
                 avatar.src = "https://www.geoguessr.com/images/plain/" + entry.avatarPath;
                 avatar.className = 'avatar';
+                avatarCell.appendChild(avatar);
         
-                const nameAndScore = document.createElement('div');
-                nameAndScore.className = 'name-and-score';
+                const nameCell = document.createElement('div');
+                nameCell.className = 'leaderboard-cell name-cell';
         
                 const nameLink = document.createElement('a');
                 nameLink.href = 'https://www.geoguessr.com/user/' + entry.id;
                 nameLink.textContent = entry.name;
                 nameLink.title = entry.name;
                 nameLink.className = 'name-link';
-                nameAndScore.appendChild(nameLink);
+                nameCell.appendChild(nameLink);
         
-                const scoreAndTimeSpan = document.createElement('span');
-                scoreAndTimeSpan.className = 'total-score';
-                scoreAndTimeSpan.textContent = `: ${entry.totalScore}pts (${entry.totalTime}s)`;
+                const totalCell = document.createElement('div');
+                totalCell.className = 'leaderboard-cell total-score';
+                totalCell.textContent = `${entry.totalScore}pts (${entry.totalTime}s)`;
         
-                const isAllRounds5000 = entry.guesses?.length > 0 &&
-                    entry.guesses.every(guess => Number(guess.score) === 5000);
+                const guesses = Array.isArray(entry.guesses) ? entry.guesses : [];
+        
+                const isAllRounds5000 = guesses.length > 0 &&
+                    guesses.every(guess => Number(guess.score) === 5000);
         
                 if (isAllRounds5000) {
-                    scoreAndTimeSpan.style.fontWeight = 'bold';
+                    totalCell.style.fontWeight = 'bold';
                 }
         
-                scoreAndTimeSpan.addEventListener('click', () => {
-                    const scores = playerDiv.querySelectorAll('.round-score');
+                totalCell.addEventListener('click', () => {
+                    const scores = row.querySelectorAll('.round-score');
                     scores.forEach(score => score.click());
         
                     const bounds = new google.maps.LatLngBounds();
         
-                    entry.guesses.forEach(guess => {
+                    guesses.forEach(guess => {
                         if (guess.lat != null && guess.lng != null) {
                             bounds.extend(new google.maps.LatLng(guess.lat, guess.lng));
                         }
@@ -432,31 +558,37 @@
                     }
                 });
         
-                nameAndScore.appendChild(scoreAndTimeSpan);
+                row.appendChild(rankCell);
+                row.appendChild(avatarCell);
+                row.appendChild(nameCell);
+                row.appendChild(totalCell);
         
-                const equalsSpan = document.createElement('span');
-                equalsSpan.textContent = ' = ';
-                nameAndScore.appendChild(equalsSpan);
+                for (let roundNumber = 1; roundNumber <= maxRoundNumber; roundNumber++) {
+                    const guess = guesses.find(g => Number(g.roundNumber) === roundNumber);
         
-                const roundScores = document.createElement('span');
-                roundScores.className = 'round-scores';
+                    const roundCell = document.createElement('div');
+                    roundCell.className = 'leaderboard-cell score-cell round-score';
         
-                entry.guesses.forEach(guess => {
-                    const roundScore = document.createElement('span');
-                    roundScore.className = 'round-score score-cell';
-                    roundScore.textContent = `R${guess.roundNumber}: ${guess.score}pts`;
-        
-                    if (Number(guess.score) === 5000) {
-                        roundScore.style.fontWeight = 'bold';
+                    if (!guess) {
+                        roundCell.textContent = '-';
+                        row.appendChild(roundCell);
+                        continue;
                     }
+        
+                    roundCell.textContent = `R${guess.roundNumber}: ${guess.score}pts`;
         
                     const timeSpan = document.createElement('span');
                     timeSpan.textContent = ` (${guess.time}s)`;
                     timeSpan.style.fontSize = 'smaller';
+                    timeSpan.style.marginLeft = '3px';
         
-                    roundScore.appendChild(timeSpan);
+                    roundCell.appendChild(timeSpan);
         
-                    roundScore.addEventListener('click', () => {
+                    if (Number(guess.score) === 5000) {
+                        roundCell.style.fontWeight = 'bold';
+                    }
+        
+                    roundCell.addEventListener('click', () => {
                         const result = toggleMarkerWithAvatar(
                             guess.lat,
                             guess.lng,
@@ -465,23 +597,21 @@
                         );
         
                         if (result) {
-                            roundScore.classList.add('active');
+                            roundCell.classList.add('active');
                         } else {
-                            roundScore.classList.remove('active');
+                            roundCell.classList.remove('active');
                         }
                     });
         
-                    roundScores.appendChild(roundScore);
-                });
+                    row.appendChild(roundCell);
+                }
         
-                playerDiv.appendChild(rankSpan);
-                playerDiv.appendChild(avatar);
-                playerDiv.appendChild(nameAndScore);
-                playerDiv.appendChild(roundScores);
-                leaderboardContainer.appendChild(playerDiv);
+                table.appendChild(row);
             });
+        
+            leaderboardContainer.appendChild(table);
         }
-
+        
         if (collectionName && documentId) {
             db.collection(collectionName).doc(documentId)
                 .get()
