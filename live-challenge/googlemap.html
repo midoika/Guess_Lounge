@@ -88,6 +88,7 @@
         .score-cell.active {
             color: yellowgreen;
             border-color: yellowgreen;
+            background-color: #f6fff0;
         }
         
         .total-score {
@@ -104,6 +105,22 @@
             font-size: smaller;
             white-space: nowrap;
         }
+
+        .leaderboard-scrollbar {
+            overflow-x: auto;
+            overflow-y: hidden;
+            height: 18px;
+            margin-bottom: 4px;
+        }
+        
+        .leaderboard-scrollbar-content {
+            height: 1px;
+        }
+        
+        .leaderboard-table-scroll {
+            overflow-x: auto;
+        }
+        
         .leaderboard-table {
             display: grid;
             grid-template-columns:
@@ -111,10 +128,11 @@
                 50px
                 minmax(120px, 220px)
                 minmax(120px, 160px)
-                repeat(var(--round-count), minmax(125px, 1fr));
+                repeat(var(--round-count), minmax(130px, 1fr));
             gap: 2px;
             align-items: stretch;
-            overflow-x: auto;
+            width: max-content;
+            min-width: 100%;
         }
         
         .leaderboard-header {
@@ -143,6 +161,22 @@
             background-color: #e9e9e9;
             justify-content: center;
             text-align: center;
+        }
+        
+        .round-time {
+            display: block;
+            font-size: smaller;
+            margin-left: 0;
+            white-space: nowrap;
+        }
+
+        .round-header {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .round-header:hover {
+            background-color: #dcefd6;
         }
         
         .rank-cell {
@@ -197,12 +231,7 @@
             background-color: #f6fff0;
         }
         
-        .round-time {
-            display: block;
-            font-size: smaller;
-            margin-left: 0;
-            white-space: nowrap;
-        }
+
     </style>
 </head>
 
@@ -494,6 +523,16 @@
                 )
             );
         
+            const topScrollbar = document.createElement('div');
+            topScrollbar.className = 'leaderboard-scrollbar';
+        
+            const topScrollbarContent = document.createElement('div');
+            topScrollbarContent.className = 'leaderboard-scrollbar-content';
+            topScrollbar.appendChild(topScrollbarContent);
+        
+            const tableScroll = document.createElement('div');
+            tableScroll.className = 'leaderboard-table-scroll';
+        
             const table = document.createElement('div');
             table.className = 'leaderboard-table';
             table.style.setProperty('--round-count', maxRoundNumber);
@@ -512,8 +551,43 @@
         
             for (let roundNumber = 1; roundNumber <= maxRoundNumber; roundNumber++) {
                 const cell = document.createElement('div');
-                cell.className = 'leaderboard-cell';
+                cell.className = 'leaderboard-cell round-header';
                 cell.textContent = `Round ${roundNumber}`;
+                cell.dataset.roundNumber = String(roundNumber);
+                cell.title = `Round ${roundNumber} の全員分のゲス地点を表示/非表示`;
+        
+                cell.addEventListener('click', () => {
+                    const roundCells = table.querySelectorAll(
+                        `.round-score[data-round-number="${roundNumber}"]`
+                    );
+        
+                    const clickableRoundCells = Array.from(roundCells).filter(roundCell =>
+                        !roundCell.classList.contains('empty-score')
+                    );
+        
+                    if (clickableRoundCells.length === 0) {
+                        return;
+                    }
+        
+                    const allActive = clickableRoundCells.every(roundCell =>
+                        roundCell.classList.contains('active')
+                    );
+        
+                    if (allActive) {
+                        clickableRoundCells.forEach(roundCell => {
+                            if (roundCell.classList.contains('active')) {
+                                roundCell.click();
+                            }
+                        });
+                    } else {
+                        clickableRoundCells.forEach(roundCell => {
+                            if (!roundCell.classList.contains('active')) {
+                                roundCell.click();
+                            }
+                        });
+                    }
+                });
+        
                 header.appendChild(cell);
             }
         
@@ -557,20 +631,20 @@
                 nameLink.className = 'name-link';
                 nameCell.appendChild(nameLink);
         
+                const guesses = Array.isArray(entry.guesses) ? entry.guesses : [];
+        
                 const totalCell = document.createElement('div');
                 totalCell.className = 'leaderboard-cell total-score';
-                
+        
                 const totalScoreSpan = document.createElement('span');
                 totalScoreSpan.textContent = `${entry.totalScore}pts`;
-                
+        
                 const totalTimeSpan = document.createElement('span');
                 totalTimeSpan.textContent = `(${entry.totalTime}s)`;
                 totalTimeSpan.className = 'total-time';
-                
+        
                 totalCell.appendChild(totalScoreSpan);
                 totalCell.appendChild(totalTimeSpan);
-        
-                const guesses = Array.isArray(entry.guesses) ? entry.guesses : [];
         
                 const isAllRounds5000 = guesses.length > 0 &&
                     guesses.every(guess => Number(guess.score) === 5000);
@@ -606,20 +680,22 @@
         
                     const roundCell = document.createElement('div');
                     roundCell.className = 'leaderboard-cell score-cell round-score';
+                    roundCell.dataset.roundNumber = String(roundNumber);
         
                     if (!guess) {
                         roundCell.textContent = '-';
+                        roundCell.classList.add('empty-score');
                         row.appendChild(roundCell);
                         continue;
                     }
         
                     const scoreTextSpan = document.createElement('span');
                     scoreTextSpan.textContent = `R${guess.roundNumber}: ${guess.score}pts`;
-                    
+        
                     const timeSpan = document.createElement('span');
                     timeSpan.textContent = `(${guess.time}s)`;
                     timeSpan.className = 'round-time';
-                    
+        
                     roundCell.appendChild(scoreTextSpan);
                     roundCell.appendChild(timeSpan);
         
@@ -648,7 +724,36 @@
                 table.appendChild(row);
             });
         
-            leaderboardContainer.appendChild(table);
+            tableScroll.appendChild(table);
+        
+            leaderboardContainer.appendChild(topScrollbar);
+            leaderboardContainer.appendChild(tableScroll);
+        
+            let isSyncingScroll = false;
+        
+            topScrollbar.addEventListener('scroll', () => {
+                if (isSyncingScroll) {
+                    return;
+                }
+        
+                isSyncingScroll = true;
+                tableScroll.scrollLeft = topScrollbar.scrollLeft;
+                isSyncingScroll = false;
+            });
+        
+            tableScroll.addEventListener('scroll', () => {
+                if (isSyncingScroll) {
+                    return;
+                }
+        
+                isSyncingScroll = true;
+                topScrollbar.scrollLeft = tableScroll.scrollLeft;
+                isSyncingScroll = false;
+            });
+        
+            requestAnimationFrame(() => {
+                topScrollbarContent.style.width = `${table.scrollWidth}px`;
+            });
         }
         
         if (collectionName && documentId) {
