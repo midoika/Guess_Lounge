@@ -33,7 +33,7 @@ https://www.geoguessr.com/live-challenge/8774df8b-07c9-4490-ae7b-c076e2a4b7b6
 - [公式HP](https://www.tampermonkey.net/)
   - [Google Chrome版](https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo?hl=ja&pli=1)
     ![Tampermonkeyインストール方法](https://github.com/midoika/Guess_Lounge/blob/main/geoguessr-live-challenge-tampermonkey/how_to_install_Tampermonkey.png)
-  - [Fire fox版](https://addons.mozilla.org/ja/firefox/addon/tampermonkey/)
+  - [Firefox版](https://addons.mozilla.org/ja/firefox/addon/tampermonkey/)
   - [Microsoft Edge版](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd)
   
 2. [geoguessr-live-challenge-compact.user.js](https://github.com/midoika/Guess_Lounge/blob/main/geoguessr-live-challenge-tampermonkey/geoguessr-live-challenge-compact.user.js) に移動しコードをコピーします。
