@@ -4,7 +4,7 @@ Chrome / Firefox 共通の **Tampermonkey用ユーザースクリプト** です
 
 GeoGuessr の Party Lobby ページを開くと、右上に `Copy Live Challenge URL` ボタンを表示します。
 
-これをクリックしてURLを保存してください。
+これをクリックすると、Live Challenge URL がクリップボードにコピーされます。
 
 対象URL:
 
@@ -13,9 +13,9 @@ https://www.geoguessr.com/party/lobby/*
 https://www.geoguessr.com/*/party/lobby/*
 ```
 > [!WARNING]
-> ボタンは必ず試合が終了する前に押してください。最終ラップが終わるとURLが取得できなります。
-> 
-> **必ず試合が始まった時点でボタンを押すこと。**
+> Live Challenge URL は、試合終了前に取得してください。
+> 最終ラウンド終了後は `lobbyId` を取得できません。
+> 確実に保存するため、試合開始後の早い段階でボタンを押すことをおすすめします。
 
 失敗例
 ![試合終了後にボタンを押しURLが保存できなかった例](https://github.com/midoika/Guess_Lounge/blob/main/geoguessr-live-challenge-tampermonkey/missing_url.png)
