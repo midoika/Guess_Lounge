@@ -1,4 +1,5 @@
 # GeoGuessr Live Challenge URL Copier
+## ※本ツールは自己責任でご利用ください。商用利用したことによる金銭トラブルが発生しても、製作者は一切関与しません。
 
 Chrome / Firefox 共通の **Tampermonkey用ユーザースクリプト** です。
 
