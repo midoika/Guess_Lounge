@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         GeoGuessr Live Challenge URL Copier Compact
+// @name         GeoGuessr Game URL Copier
 // @namespace    https://www.geoguessr.com/
-// @version      1.1.0
-// @description  GeoGuessr Party Lobby から live-challenge URL をコピーします。SPA遷移対応。
+// @version      1.2.2
+// @description  GeoGuessr Party Lobby から Live Challenge / Duels / Team Duels / Bullseye のゲームURLをコピーします。SPA遷移対応。
 // @match        https://www.geoguessr.com/*
 // @grant        GM_setClipboard
 // @run-at       document-idle
@@ -11,26 +11,50 @@
 (() => {
   'use strict';
 
-  const BUTTON_ID = "gg-live-challenge-copy-button";
-  const MESSAGE_ID = "gg-live-challenge-copy-message";
+  const BUTTON_ID = "gg-game-url-copy-button";
+  const MESSAGE_ID = "gg-game-url-copy-message";
 
   function isLobbyPage() {
     return /^\/(?:[^/]+\/)?party\/lobby\/[^/]+/.test(location.pathname);
   }
 
-  function extractLobbyId(html) {
+  function extractPartyInfo(html) {
     if (!html) return null;
 
-    let match = html.match(/"lobbyId"\s*:\s*"([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})"/);
-    if (match) return match[1];
+    const lobbyMatch =
+      html.match(/"lobbyId"\s*:\s*"([^"]+)"/) ||
+      html.match(/&quot;lobbyId&quot;\s*:\s*&quot;([^&]+)&quot;/);
 
-    match = html.match(/&quot;lobbyId&quot;\s*:\s*&quot;([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})&quot;/);
-    if (match) return match[1];
+    const typeMatch =
+      html.match(/"gameType"\s*:\s*"([^"]+)"/) ||
+      html.match(/&quot;gameType&quot;\s*:\s*&quot;([^&]+)&quot;/);
 
-    return null;
+    if (!lobbyMatch) return null;
+
+    return {
+      lobbyId: lobbyMatch[1],
+      gameType: typeMatch ? typeMatch[1] : null
+    };
   }
 
-  async function getLobbyId() {
+  function makeGameUrl(gameType, lobbyId) {
+    switch (gameType) {
+      case "LiveChallenge":
+        return `https://www.geoguessr.com/live-challenge/${lobbyId}`;
+
+      case "Duels":
+      case "TeamDuels":
+        return `https://www.geoguessr.com/duels/${lobbyId}/summary`;
+
+      case "Bullseye":
+        return `https://www.geoguessr.com/bullseye/${lobbyId}`;
+
+      default:
+        return null;
+    }
+  }
+
+  async function getPartyInfo() {
     try {
       const response = await fetch(location.href, {
         method: "GET",
@@ -40,22 +64,37 @@
 
       if (response.ok) {
         const html = await response.text();
-        const id = extractLobbyId(html);
-        if (id) return id;
+        const info = extractPartyInfo(html);
+        if (info?.lobbyId) return info;
       }
     } catch (e) {
-      console.debug("[GeoGuessr Live Challenge URL Copier] fetch failed:", e);
+      console.debug("[GeoGuessr Game URL Copier] fetch failed:", e);
     }
 
-    const domId = extractLobbyId(document.documentElement.innerHTML);
-    if (domId) return domId;
+    const domInfo = extractPartyInfo(document.documentElement.innerHTML);
+    if (domInfo?.lobbyId) return domInfo;
 
     for (const script of document.scripts) {
-      const id = extractLobbyId(script.textContent || "");
-      if (id) return id;
+      const info = extractPartyInfo(script.textContent || "");
+      if (info?.lobbyId) return info;
     }
 
     return null;
+  }
+
+  function maskId(id) {
+    if (!id) return "";
+
+    if (id.includes("-")) {
+      const firstPart = id.split("-")[0];
+      return firstPart + id.slice(firstPart.length).replace(/[0-9a-zA-Z]/g, "*");
+    }
+
+    if (id.length > 8) {
+      return id.slice(0, 8) + "*".repeat(id.length - 8);
+    }
+
+    return id;
   }
 
   function showMessage(text, ok = true) {
@@ -101,7 +140,7 @@
     const button = document.createElement("button");
     button.id = BUTTON_ID;
     button.type = "button";
-    button.textContent = "Copy Live Challenge URL";
+    button.textContent = "Copy Game URL";
 
     Object.assign(button.style, {
       position: "fixed",
@@ -127,30 +166,38 @@
       button.textContent = "Searching...";
 
       try {
-        const lobbyId = await getLobbyId();
+        const info = await getPartyInfo();
 
-        if (!lobbyId) {
+        if (!info?.lobbyId) {
           showMessage("lobbyId が見つかりませんでした", false);
           return;
         }
 
-        const liveChallengeUrl =
-          `https://www.geoguessr.com/live-challenge/${lobbyId}`;
-
-        if (typeof GM_setClipboard === "function") {
-          GM_setClipboard(liveChallengeUrl, "text");
-        } else {
-          await navigator.clipboard.writeText(liveChallengeUrl);
+        if (!info.gameType) {
+          showMessage("gameType が見つかりませんでした", false);
+          return;
         }
 
-        const firstPart = lobbyId.split("-")[0];
-        const masked =
-          firstPart + lobbyId.slice(firstPart.length).replace(/[0-9a-fA-F]/g, "*");
+        const gameUrl = makeGameUrl(info.gameType, info.lobbyId);
 
-        showMessage(`コピーしました: ${masked}`, true);
+        if (!gameUrl) {
+          showMessage(`未対応のモードです: ${info.gameType}`, false);
+          return;
+        }
+
+        if (typeof GM_setClipboard === "function") {
+          GM_setClipboard(gameUrl, "text");
+        } else {
+          await navigator.clipboard.writeText(gameUrl);
+        }
+
+        showMessage(
+          `コピーしました (${info.gameType}): ${maskId(info.lobbyId)}`,
+          true
+        );
 
       } catch (e) {
-        console.error("[GeoGuessr Live Challenge URL Copier]", e);
+        console.error("[GeoGuessr Game URL Copier]", e);
         showMessage("URL の取得中にエラーが発生しました", false);
       } finally {
         button.disabled = false;
