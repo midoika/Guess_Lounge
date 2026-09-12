@@ -1,11 +1,30 @@
-# GeoGuessr Live Challenge URL Copier
+# GeoGuessr Game URL Copier
 ## ※本ツールは自己責任でご利用ください。商用利用したことによる金銭トラブルが発生しても、製作者は一切関与しません。
 
 Chrome / Firefox 共通の **Tampermonkey用ユーザースクリプト** です。
 
-GeoGuessr の Party Lobby ページを開くと、右上に `Copy Live Challenge URL` ボタンを表示します。
+GeoGuessr の Party Lobby ページを開くと、右上に `Copy Game URL` ボタンを表示します。
 
-これをクリックすると、Live Challenge URL がクリップボードにコピーされます。
+これをクリックすると、リザルト URL がクリップボードにコピーされます。
+
+> [!WARNING]
+> **コピーボタンは、試合終了前に必ず押してください。**
+> **そしてコピーされたURLが新規のものか必ず確かめてください。**
+> 最終ラウンド終了後はURLを正常に取得できません。
+> 確実に保存するため、試合開始直後の早い段階でボタンを押すことをおすすめします。
+
+対象モード:
+
+- ○ 拡張機能により取得可能
+- ◎ 元から取得可能
+- － そもそもゲームが未対応
+
+| 状態 | Duels | Live Challenge | Team Duels | Bullseye |
+|---|:---:|:---:|:---:|:---:|
+| Ongoing Game | ○ | ○ | ○ | ○ |
+| Spectating | ○ | － | ○ | － |
+| Presenter | ○ | － | ○ | － |
+| Player | ◎ | ○ | ◎ | ○ |
 
 対象URL:
 
@@ -13,10 +32,7 @@ GeoGuessr の Party Lobby ページを開くと、右上に `Copy Live Challenge
 https://www.geoguessr.com/party/lobby/*
 https://www.geoguessr.com/*/party/lobby/*
 ```
-> [!WARNING]
-> Live Challenge URL は、試合終了前に取得してください。
-> 最終ラウンド終了後は `lobbyId` を取得できません。
-> 確実に保存するため、試合開始後の早い段階でボタンを押すことをおすすめします。
+
 
 失敗例
 ![試合終了後にボタンを押しURLが保存できなかった例](https://github.com/midoika/Guess_Lounge/blob/main/geoguessr-live-challenge-tampermonkey/missing_url.png)
